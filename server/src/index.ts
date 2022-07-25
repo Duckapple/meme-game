@@ -14,20 +14,11 @@ import {
   BeginMessage,
   AssignUUIDResponse,
   MakeMoveMessage,
-  TileColor,
   UpdateSettingsMessage,
   EndStandingsMessage,
   EndStandingsResponse,
-  EndGameResponse,
 } from "./model";
-import {
-  createGameSettings,
-  createGameState,
-  endGame,
-  endRound,
-  isEndOfGame,
-  isEndOfRound,
-} from "./create";
+import { createGameState, createSettings } from "./create";
 import { rooms, Player, createRoomID, createUUID, Room } from "./state";
 import log from "./log";
 const { app } = expressWs(express());
@@ -46,22 +37,23 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
   if (!m.userID || !m.userName) return ws.send(createError("No user ID"));
 
   let roomID: string;
-  if (m.roomID && !rooms[m.roomID]) roomID = m.roomID;
+  if (m.roomID && !rooms.has(m.roomID)) roomID = m.roomID;
   else
     do roomID = createRoomID();
-    while (rooms[roomID]);
+    while (rooms.has(roomID));
 
   const time = new Date();
   const player: Player = { name: m.userName, socket: ws, UUID: m.userID };
   const players: Player[] = [player];
-  const settings = createGameSettings();
-  rooms[roomID] = {
+  const settings = createSettings();
+  rooms.set(roomID, {
     creator: player,
     createdAt: time,
     updatedAt: time,
     players,
+    broadcasters: [],
     settings,
-  };
+  });
   const res: CreateRoomResponse = {
     type: MessageType.CREATE_ROOM,
     roomID,
@@ -75,10 +67,10 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
 
 function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
   if (!m.userID || !m.userName) return ws.send(createError("No user ID"));
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   const existing = room.players.find((player) => player.name === m.userName);
   if (existing) {
@@ -118,10 +110,10 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
   log(`Joined room ${m.roomID}`);
 }
 function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
@@ -157,10 +149,10 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
 }
 
 function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
@@ -180,10 +172,10 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   // Cleanup allows us to only mutate state once we are sure the operation can be done
   const cleanup: (() => void)[] = [];
 
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   const playerIndex = room.players.findIndex(
     (player) => player.UUID === m.userID
@@ -194,176 +186,90 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   if (!room.state) return ws.send(createError("Game not in progress"));
 
   if (
-    room.state.currentPlayer !==
+    room.state.currentTzar !==
     room.players.findIndex(({ UUID }) => m.userID === UUID)
   )
     return ws.send(createError("Cannot make a move when not your turn"));
 
-  if ((m.plate && m.middle) || (!m.plate && !m.middle))
-    return ws.send(
-      createError(
-        "Cannot pick " +
-          (m.plate && m.middle ? "both" : "neither of") +
-          " plate and middle"
-      )
-    );
-
-  let tiles: TileColor[] = [];
-  let firstToken: TileColor.FIRST | null = null;
-  let moveDescription: string;
-  if (m.plate != null) {
-    const plate = room.state.middleBoard.plates[m.plate.index] ?? [];
-    tiles = plate.filter((color) => color === m.plate!.color);
-    if (tiles.length === 0)
-      return ws.send(
-        createError("Cannot pick color from plate which is not present")
-      );
-    // Move plate leftovers to middle
-    cleanup.push(() =>
-      plate
-        .filter((color) => color !== m.plate!.color)
-        .forEach((color) => {
-          room.state!.middleBoard.common[color] += 1;
-        })
-    );
-    moveDescription = `picked ${
-      tiles.length
-    } ${m.plate.color.toLowerCase()} tile${
-      tiles.length > 1 ? "s" : ""
-    } from plate ${m.plate.index + 1}.`;
-    // Remove items on plate
-    cleanup.push(() => (room.state!.middleBoard.plates[m.plate!.index] = []));
-  } else {
-    const tileCount = room.state.middleBoard.common[m.middle!];
-    if (tileCount <= 0)
-      return ws.send(
-        createError(
-          "There are no tiles in the middle of the color " +
-            m.middle?.toLowerCase()
-        )
-      );
-    if (m.middle !== TileColor.FIRST) tiles = Array(tileCount).fill(m.middle);
-    if (room.state.middleBoard.common[TileColor.FIRST] > 0) {
-      firstToken = TileColor.FIRST;
-      // Remove go-first token
-      cleanup.push(() => (room.state!.middleBoard.common[TileColor.FIRST] = 0));
-    }
-    const pickedFirst = firstToken
-      ? ", picking the first player token as well"
-      : "";
-    moveDescription = `picked ${tiles.length} ${m.middle?.toLowerCase()} tile${
-      tiles.length > 1 ? "s" : ""
-    } from middle${pickedFirst}.`;
-    // Remove chosen color from middle
-    cleanup.push(() => (room.state!.middleBoard.common[m.middle!] = 0));
-  }
-
-  const playerBoard = room.state.playerBoards[playerIndex];
-
-  const row = playerBoard.rows[m.row];
-
-  if (
-    [null, undefined, tiles[0]].includes(row[row.length - 1]) &&
-    !playerBoard.table[m.row].includes(tiles[0])
-  )
-    for (let i = row.length - 1; i >= 0; i--) {
-      if (row[i] == null) {
-        row[i] = tiles.pop();
-      }
-    }
-
-  for (let i = 0; i < playerBoard.dropped.length; i++) {
-    if (playerBoard.dropped[i] != null) continue;
-    const element = firstToken ?? tiles.pop();
-    if (element === firstToken) firstToken = null;
-    if (!element) break;
-    playerBoard.dropped[i] = element;
-  }
-
-  cleanup.forEach((f) => f());
-
-  room.state.currentPlayer =
-    (room.state.currentPlayer + 1) % room.players.length;
-
   const msg: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
     state: room.state,
-    update: `${room.players[playerIndex].name} ${moveDescription}`,
+    update: `${room.players[playerIndex].name}`,
   };
 
   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
 
-  if (isEndOfRound(room.state)) {
-    const msg: UpdateRoomResponse = {
-      type: MessageType.UPDATE_ROOM,
-      update: "Round ended, calculating scores...",
-    };
-    room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
-    setTimeout(() => handleEndOfRound(room), 3000);
-  }
+  // if (isEndOfRound(room.state)) {
+  //   const msg: UpdateRoomResponse = {
+  //     type: MessageType.UPDATE_ROOM,
+  //     update: "Round ended, calculating scores...",
+  //   };
+  //   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  //   // setTimeout(() => handleEndOfRound(room), 3000);
+  // }
 }
 
-function handleEndOfRound(room: Room) {
-  if (!room.state) return;
+// function handleEndOfRound(room: Room) {
+//   if (!room.state) return;
 
-  const points = room.state.playerBoards.map(({ score, playerName }) => ({
-    score: -score,
-    playerName,
-  }));
+//   const points = room.state.playerBoards.map(({ score, playerName }) => ({
+//     score: -score,
+//     playerName,
+//   }));
 
-  room.state = endRound(room.state, room.settings);
+//   room.state = endRound(room.state, room.settings);
 
-  points.forEach((point, i) => {
-    point.score += room.state?.playerBoards[i].score ?? -point.score;
-  });
+//   points.forEach((point, i) => {
+//     point.score += room.state?.playerBoards[i].score ?? -point.score;
+//   });
 
-  points.sort((a, b) => b.score - a.score);
+//   points.sort((a, b) => b.score - a.score);
 
-  const msg: UpdateRoomResponse = {
-    type: MessageType.UPDATE_ROOM,
-    state: room.state,
-    update: points
-      .map(
-        ({ playerName, score }) =>
-          `${playerName}: ${score > 0 ? "+" : ""}${score} points`
-      )
-      .join(", "),
-  };
+//   const msg: UpdateRoomResponse = {
+//     type: MessageType.UPDATE_ROOM,
+//     state: room.state,
+//     update: points
+//       .map(
+//         ({ playerName, score }) =>
+//           `${playerName}: ${score > 0 ? "+" : ""}${score} points`
+//       )
+//       .join(", "),
+//   };
 
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+//   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
 
-  if (isEndOfGame(room.state)) {
-    const msg: UpdateRoomResponse = {
-      type: MessageType.UPDATE_ROOM,
-      update: "Game ended, calculating final scores...",
-      state: {
-        ...room.state,
-        currentPlayer: -1,
-      },
-    };
-    room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
-    setTimeout(() => {
-      handleEndOfGame(room);
-    }, 3000);
-  }
-}
+//   if (isEndOfGame(room.state)) {
+//     const msg: UpdateRoomResponse = {
+//       type: MessageType.UPDATE_ROOM,
+//       update: "Game ended, calculating final scores...",
+//       state: {
+//         ...room.state,
+//         currentPlayer: -1,
+//       },
+//     };
+//     room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+//     setTimeout(() => {
+//       handleEndOfGame(room);
+//     }, 3000);
+//   }
+// }
 
-function handleEndOfGame(room: Room) {
-  if (!room.state) return;
-  const { state, standings } = endGame(room.state, room.settings);
-  const msg: EndGameResponse = {
-    type: MessageType.END_GAME,
-    state,
-    standings,
-  };
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
-}
+// function handleEndOfGame(room: Room) {
+//   if (!room.state) return;
+//   const { state, standings } = endGame(room.state, room.settings);
+//   const msg: EndGameResponse = {
+//     type: MessageType.END_GAME,
+//     state,
+//     standings,
+//   };
+//   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+// }
 
 function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
@@ -380,10 +286,10 @@ function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
 }
 
 function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
-  if (!m.roomID || !rooms[m.roomID])
-    return ws.send(createError("Incorrect room ID"));
+  const room = rooms.get(m.roomID);
 
-  const room = rooms[m.roomID];
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return ws.send(createError("Incorrect room ID"));
 
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
@@ -394,7 +300,7 @@ function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
 
   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
 
-  delete rooms[m.roomID];
+  rooms.delete(m.roomID);
 
   log(`Ended standings for ${m.roomID}`);
 }

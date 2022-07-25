@@ -1,4 +1,4 @@
-import { GameSettings, GameState, RoomDetails, TileColor } from ".";
+import { GameSettings, GameState, RoomDetails } from ".";
 export type Message =
   | CreateRoomMessage
   | JoinRoomMessage
@@ -56,9 +56,6 @@ export type MakeMoveMessage = {
   type: MessageType.MAKE_MOVE;
   roomID: string;
   userID: UUID;
-  plate?: { index: number; color: TileColor };
-  middle?: TileColor;
-  row: number;
 };
 export type EndStandingsMessage = {
   type: MessageType.END_STANDINGS;

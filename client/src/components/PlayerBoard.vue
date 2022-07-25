@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { zip } from "lodash";
 import { computed, ref } from "vue";
-import TileHolder from "./TileHolder.vue";
 import {
   GameSettings,
   PlayerBoard,
@@ -106,18 +105,6 @@ const hovered = computed<{
           <div
             v-if="row.length < 5"
             :class="`col-span-${5 - row.length}`"
-            @pointerenter="
-              () =>
-                self &&
-                interactive &&
-                hoveredRow !== index &&
-                (hoveredRow = index)
-            "
-            @click="() => self && interactive && onMakeMove?.(index)"
-          />
-          <TileHolder
-            v-for="color in row"
-            v-bind="color"
             @pointerenter="
               () =>
                 self &&

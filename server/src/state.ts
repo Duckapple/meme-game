@@ -11,17 +11,18 @@ export type Player = {
 export type Room = {
   players: Player[];
   creator: Player;
+  broadcasters: Player[];
   createdAt: Date;
   updatedAt: Date;
   state?: GameState;
   settings: GameSettings;
 };
 
-type Rooms = Record<string, Room>;
+// type Rooms = Record<string, Room>;
 
 const UUIDs = new Set<string>();
 
-export const rooms: Rooms = {};
+export const rooms: Map<string, Room> = new Map();
 
 export function createRoomID(): string {
   return randomInt(100000, 999999).toString();
