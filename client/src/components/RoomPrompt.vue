@@ -1,7 +1,5 @@
 <script lang="ts" setup>
 import { ref } from "vue";
-import { TileColor } from "../model";
-import Tile from "./Tile.vue";
 import Input from "./Input.vue";
 
 defineProps<{
@@ -37,7 +35,7 @@ const roomcodeError = ref<boolean>(false);
     />
     <div class="flex items-end justify-center space-x-16 text-2xl">
       <div class="flex justify-center w-md">
-        <Tile
+        <button
           @click="
             () => {
               if (username) {
@@ -48,12 +46,9 @@ const roomcodeError = ref<boolean>(false);
               }
             }
           "
-          role="button"
-          :color="TileColor.RED"
-          :unrestrained="true"
         >
           <span class="block px-8 py-4 cursor-pointer">Create New Room</span>
-        </Tile>
+        </button>
       </div>
       <div class="flex flex-col items-center justify-center space-y-8 w-md">
         <Input
@@ -76,7 +71,7 @@ const roomcodeError = ref<boolean>(false);
             class="w-8 h-8"
           />
         </div> -->
-        <Tile
+        <button
           @click="
             () => {
               if (username && roomCode) {
@@ -88,12 +83,9 @@ const roomcodeError = ref<boolean>(false);
               }
             }
           "
-          role="button"
-          :color="TileColor.BLUE"
-          :unrestrained="true"
         >
           <span class="block px-8 py-4 cursor-pointer">Join Existing Room</span>
-        </Tile>
+        </button>
       </div>
     </div>
   </div>
