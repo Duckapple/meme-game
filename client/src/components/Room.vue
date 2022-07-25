@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 import { without } from "lodash";
-import { GameSettings, TileColor } from "../model";
+import { GameSettings } from "../model";
 import { setTitle } from "../title";
 import Tile from "./Tile.vue";
 import Settings from "./Settings.vue";
@@ -118,15 +118,9 @@ setTitle(props.roomID);
             {{ roomID }}
           </span>
           <span class="mb-8 text-lg">Click ID to copy room link</span>
-          <Tile
-            v-if="username === creator"
-            role="button"
-            :color="TileColor.BLUE"
-            :unrestrained="true"
-            @click="() => onBegin()"
-          >
+          <button v-if="username === creator" @click="() => onBegin()">
             <span class="block px-8 py-4 cursor-pointer"> Start Game </span>
-          </Tile>
+          </button>
         </div>
       </div>
       <div class="flex-1 mt-8">
@@ -138,16 +132,13 @@ setTitle(props.roomID);
               onChanged: () => (settingsApplied = false),
             }"
           />
-          <Tile
+          <button
             v-if="username === creator"
-            role="button"
-            :color="settingsApplied ? TileColor.BLACK : TileColor.BLUE"
-            :unrestrained="true"
             class="my-4"
             @click="applySettings"
           >
             <span class="block px-8 py-4 cursor-pointer"> Apply Settings </span>
-          </Tile>
+          </button>
         </div>
       </div>
     </div>

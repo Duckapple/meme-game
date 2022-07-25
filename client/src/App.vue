@@ -2,7 +2,6 @@
 import { omit } from "lodash";
 import { ref } from "vue";
 import {
-  TileColor,
   MessageType,
   CreateRoomMessage,
   MessageResponse,
@@ -22,8 +21,8 @@ import { stopConfetti } from "./confetti";
 
 export type MakeMoveFunction = (args: {
   row?: number;
-  middle?: TileColor;
-  plate?: MakeMoveMessage["plate"];
+  // middle?: TileColor;
+  // plate?: MakeMoveMessage["plate"];
 }) => void;
 
 const username = ref<string>();
@@ -149,7 +148,7 @@ const onBegin = () => {
   ws.send(JSON.stringify(msg));
 };
 
-const onMakeMove: MakeMoveFunction = (args) => {
+/* const onMakeMove: MakeMoveFunction = (args) => {
   if (!roomDetails.value || !UUID.value) return;
   const hasPlate = args.plate?.color != null;
   const hasMiddle = args.middle != null;
@@ -163,7 +162,7 @@ const onMakeMove: MakeMoveFunction = (args) => {
     middle: args.middle,
   };
   ws.send(JSON.stringify(msg));
-};
+}; */
 
 const onEndStandings = () => {
   if (!roomDetails.value || !UUID.value) return;
@@ -194,7 +193,7 @@ const onEndStandings = () => {
       state: roomDetails.state,
       settings: roomDetails.settings,
       username,
-      onMakeMove,
+      // onMakeMove,
     }"
   />
   <div class="fixed bottom-4 right-4">

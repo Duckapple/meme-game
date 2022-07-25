@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 import { toggleConfetti } from "../confetti";
-import { TileColor } from "../model";
 import Tile from "./Tile.vue";
 
 const props = defineProps<{
@@ -93,14 +92,9 @@ const hide = ref(false);
       v-if="endGame"
       @pointerup="() => (hide = false)"
     >
-      <Tile
-        @click="endGame"
-        role="button"
-        :color="TileColor.RED"
-        :unrestrained="true"
-      >
+      <button @click="endGame">
         <span class="block px-8 py-4 cursor-pointer">End Game</span>
-      </Tile>
+      </button>
     </div>
   </div>
 </template>

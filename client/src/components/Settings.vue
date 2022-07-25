@@ -6,23 +6,10 @@ const props = defineProps<{
   isCreator: boolean;
   onChanged: () => void;
 }>();
-
-const setReward = (e: Event, key: keyof GameSettings["pointRewards"]) => {
-  const value = Number((e.target as HTMLInputElement).value);
-  if (isNaN(value)) return;
-  props.settings.pointRewards[key] = value;
-  props.onChanged();
-};
-const setPenalty = (e: Event, index: number) => {
-  const value = Number((e.target as HTMLInputElement).value);
-  if (isNaN(value)) return;
-  props.settings.pointPenalties[index] = value;
-  props.onChanged();
-};
 </script>
 
 <template>
-  <table>
+  <!-- <table>
     <tr>
       <td>
         <span>Column Points:</span>
@@ -76,7 +63,7 @@ const setPenalty = (e: Event, index: number) => {
         </span>
       </td>
     </tr>
-  </table>
+  </table> -->
 </template>
 
 <style scoped>

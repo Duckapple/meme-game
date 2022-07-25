@@ -1,7 +1,7 @@
 {
-  "name": "untitled-tile-game",
+  "name": "meme-game",
   "version": "0.0.0",
-  "repository": "git@github.com:Duckapple/untitled-tile-game.git",
+  "repository": "git@github.com:Duckapple/meme-game.git",
   "author": "Simon Green Kristensen <git@simon-green.dev>",
   "scripts": {
     "build": "cd client && yarn build && cd ../server && yarn build",
