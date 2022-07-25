@@ -118,7 +118,11 @@ setTitle(props.roomID);
             {{ roomID }}
           </span>
           <span class="mb-8 text-lg">Click ID to copy room link</span>
-          <button v-if="username === creator" @click="() => onBegin()">
+          <button
+            v-if="username === creator"
+            @click="() => onBegin()"
+            class="btn"
+          >
             <span class="block px-8 py-4 cursor-pointer"> Start Game </span>
           </button>
         </div>
@@ -134,7 +138,7 @@ setTitle(props.roomID);
           />
           <button
             v-if="username === creator"
-            class="my-4"
+            class="my-4 btn"
             @click="applySettings"
           >
             <span class="block px-8 py-4 cursor-pointer"> Apply Settings </span>

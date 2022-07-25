@@ -220,4 +220,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   @apply flex flex-col text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-200 dark:border-gray-200;
 }
+
+.btn {
+  @apply border-2 border-white cursor-pointer hover:underline transition hover:-translate-y-2 hover:shadow;
+}
 </style>

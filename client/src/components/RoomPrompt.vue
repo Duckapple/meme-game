@@ -22,9 +22,13 @@ const roomcodeError = ref<boolean>(false);
 </script>
 <template>
   <div class="flex flex-col items-center justify-center w-screen h-screen">
-    <h1 class="mb-8 text-6xl">Untitled Tile Game</h1>
+    <h1 class="text-6xl">Meme Game</h1>
+    <p>
+      Provided by simon-green and
+      <a href="https://mads.monster/Memes">www.mads.monster</a>
+    </p>
     <Input
-      class="mb-32"
+      class="mt-8 mb-32"
       :class="{
         'outline outline-2 outline-red-500': usernameError && !username,
       }"
@@ -36,6 +40,7 @@ const roomcodeError = ref<boolean>(false);
     <div class="flex items-end justify-center space-x-16 text-2xl">
       <div class="flex justify-center w-md">
         <button
+          class="btn"
           @click="
             () => {
               if (username) {
@@ -72,6 +77,7 @@ const roomcodeError = ref<boolean>(false);
           />
         </div> -->
         <button
+          class="btn"
           @click="
             () => {
               if (username && roomCode) {
