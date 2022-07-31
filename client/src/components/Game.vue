@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { computed, effect, ref } from "vue";
 import { MakeMoveFunction } from "../App.vue";
-import { GameState, GameSettings } from "../model";
-import { store } from "../state";
+import type { GameState, GameSettings, FullCard } from "../model";
+import { store, visual_cdn } from "../state";
 import TileGroup from "./TileGroup.vue";
 import PlayerBoard from "./PlayerBoard.vue";
 import Tile from "./Tile.vue";
@@ -11,6 +11,7 @@ import { setTitle } from "../title";
 
 const props = defineProps<{
   state: GameState;
+  hand: Record<"top" | "bottom", FullCard[]>;
   players: string[];
   username: string;
   creator: string;
@@ -18,7 +19,10 @@ const props = defineProps<{
   // onMakeMove: MakeMoveFunction;
 }>();
 const stateText = computed(() => {
-  return JSON.stringify(props.state, null, 2);
+  return JSON.stringify({ ...props.state, hand: props.hand }, null, 2);
+});
+const visual = computed(() => {
+  return props.state.visual ? visual_cdn.value + props.state.visual : undefined;
 });
 </script>
 
@@ -29,6 +33,7 @@ const stateText = computed(() => {
       <div class="flex flex-wrap py-8">
         <div class="h-16"></div>
       </div>
+      <img v-if="visual" :src="visual" alt="The image currently displayed" />
       <pre>{{ stateText }}</pre>
       <div>
         <label

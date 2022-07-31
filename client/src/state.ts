@@ -22,3 +22,4 @@ watch(store, (val) => {
 });
 
 export const username = ref<string>(localStorage.getItem("username") ?? "");
+export const visual_cdn = ref<string>();

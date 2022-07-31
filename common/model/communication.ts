@@ -94,6 +94,7 @@ export type UpdateRoomResponse = Partial<Omit<RoomDetails, "roomID">> & {
 export type AssignUUIDResponse = {
   type: MessageType.ASSIGN_UUID;
   userID: UUID;
+  visual_cdn: string;
 };
 export type EndGameResponse = {
   type: MessageType.END_GAME;

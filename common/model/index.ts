@@ -2,7 +2,7 @@ export * from "./communication";
 
 export type Hidden = "HIDDEN";
 
-export type Card = { id: string };
+export type Card = { id: number };
 
 export type FullCard = Card & { text: string };
 
@@ -20,9 +20,12 @@ export type RoomDetails = {
   settings: GameSettings;
 };
 
-export interface GameSettings {}
+export interface GameSettings {
+  handSize: number;
+}
 
 export interface GameState {
+  visual: string | null;
   currentTzar: number;
   tzarsTurn: boolean;
   plays: (Move | Hidden | null)[];

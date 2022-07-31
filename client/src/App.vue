@@ -12,6 +12,7 @@ import {
   MakeMoveMessage,
   UpdateSettingsMessage,
   EndStandingsMessage,
+  FullCard,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -21,7 +22,7 @@ import { stopConfetti } from "./confetti";
 import Debug from "./components/Debug.vue";
 
 import { ws } from "./comms";
-import { username } from "./state";
+import { username, visual_cdn } from "./state";
 
 export type MakeMoveFunction = (args: {
   row?: number;
@@ -30,6 +31,10 @@ export type MakeMoveFunction = (args: {
 }) => void;
 
 const UUID = ref<string>();
+const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
+  top: [],
+  bottom: [],
+});
 const roomDetails = ref<RoomDetails>();
 const standings = ref<string[]>();
 
@@ -55,6 +60,7 @@ ws.addEventListener("message", (evt) => {
 
   if (m.type === MessageType.ASSIGN_UUID) {
     UUID.value = m.userID;
+    visual_cdn.value = m.visual_cdn;
   } else if (m.type === MessageType.CREATE_ROOM) {
     location.hash = `#${m.roomID}`;
     roomDetails.value = omit(m, "type");
@@ -67,8 +73,15 @@ ws.addEventListener("message", (evt) => {
     } else {
       roomDetails.value = {
         ...roomDetails.value,
-        ...omit(m, "type"),
+        ...omit(m, ["type", "newCards"]),
       };
+    }
+    if (m.newCards) {
+      if (!hand.value) hand.value = m.newCards;
+      else {
+        hand.value.bottom.push(...m.newCards.bottom);
+        hand.value.top.push(...m.newCards.top);
+      }
     }
     if (m.update) addNotif(m.update);
   } else if (m.type === MessageType.ERROR) {
@@ -80,6 +93,7 @@ ws.addEventListener("message", (evt) => {
     stopConfetti();
     standings.value = undefined;
     roomDetails.value = undefined;
+    hand.value = undefined;
     location.hash = "";
   } else {
     addNotif(`Got unhandled message '${evt.data}'`);
@@ -184,12 +198,13 @@ const onEndStandings = () => {
     :onSettingsUpdate="onSettingsUpdate"
   />
   <Game
-    v-if="username && roomDetails?.state"
+    v-if="username && roomDetails?.state && hand"
     v-bind="{
       players: roomDetails.players,
       creator: roomDetails.creator,
       state: roomDetails.state,
       settings: roomDetails.settings,
+      hand,
       username,
       // onMakeMove,
     }"

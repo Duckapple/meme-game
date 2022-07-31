@@ -1,6 +1,7 @@
 import { WebSocket } from "ws";
 import { randomInt, randomUUID } from "crypto";
-import { GameSettings, GameState, Hidden, Move } from "./model";
+import { FullCard, GameSettings, GameState, Hidden, Move } from "./model";
+import type { Visual } from "./api";
 
 export type Player = {
   socket: WebSocket;
@@ -10,6 +11,12 @@ export type Player = {
 
 export interface InternalGameState extends GameState {
   plays: (Move | null)[]; // 'Hidden' is just a Move in the !tzarsTurn phase
+  hands: Record<"top" | "bottom", FullCard[]>[];
+  piles: {
+    top: FullCard[];
+    bottom: FullCard[];
+    visuals: Visual[];
+  };
 }
 
 export type Room = {

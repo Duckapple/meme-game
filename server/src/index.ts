@@ -25,8 +25,15 @@ import {
 } from "./create";
 import { rooms, Player, createRoomID, createUUID, Room } from "./state";
 import log from "./log";
+import { exit } from "process";
 const { app } = expressWs(express());
 const port = process.env.PORT || 8080;
+const visual_cdn = process.env.VISUAL_CDN;
+
+if (!visual_cdn) {
+  log("Env variable VISUAL_CDN not set! Exiting...");
+  exit();
+}
 
 export function createError(error: string): string {
   const err: ErrorResponse = {
@@ -152,7 +159,7 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
   log(`Rearranged players in room ${m.roomID}`);
 }
 
-function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
+async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
@@ -161,14 +168,23 @@ function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
 
-  room.state = createInternalGameState(room.players.map(({ name }) => name));
+  room.state = await createInternalGameState(
+    room.players.map(({ name }) => name),
+    room.settings
+  );
   const update: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
     state: convertGameState(room.state),
     update: "Game started",
     settings: room.settings,
   };
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(update)));
+  room.players.forEach(({ socket }, i) => {
+    const playerUpdate: UpdateRoomResponse = {
+      ...update,
+      newCards: room.state?.hands[i],
+    };
+    socket.send(JSON.stringify(playerUpdate));
+  });
   log(`Began game in room ${m.roomID}`);
 }
 
@@ -314,6 +330,7 @@ app.ws("/ws", (ws) => {
     const greeting: AssignUUIDResponse = {
       type: MessageType.ASSIGN_UUID,
       userID: createUUID(),
+      visual_cdn,
     };
     ws.send(JSON.stringify(greeting));
     log(`New connection, gave ID ${greeting.userID}`);
