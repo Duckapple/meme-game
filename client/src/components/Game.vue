@@ -17,6 +17,9 @@ const props = defineProps<{
   settings: GameSettings;
   // onMakeMove: MakeMoveFunction;
 }>();
+const stateText = computed(() => {
+  return JSON.stringify(props.state, null, 2);
+});
 </script>
 
 <template>
@@ -26,7 +29,7 @@ const props = defineProps<{
       <div class="flex flex-wrap py-8">
         <div class="h-16"></div>
       </div>
-
+      <pre>{{ stateText }}</pre>
       <div>
         <label
           for="colorBlindCheck"

@@ -1,5 +1,17 @@
 export * from "./communication";
 
+export type Hidden = "HIDDEN";
+
+export type Card = { id: string };
+
+export type FullCard = Card & { text: string };
+
+export type Move = {
+  player: string;
+  top: Card;
+  bottom: Card;
+};
+
 export type RoomDetails = {
   roomID: string;
   state?: GameState;
@@ -12,6 +24,8 @@ export interface GameSettings {}
 
 export interface GameState {
   currentTzar: number;
+  tzarsTurn: boolean;
+  plays: (Move | Hidden | null)[];
 }
 
 export type Tuple<T, N extends number> = number extends N

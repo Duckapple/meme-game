@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { randomInt, randomUUID } from "crypto";
-import { GameSettings, GameState } from "./model";
+import { GameSettings, GameState, Hidden, Move } from "./model";
 
 export type Player = {
   socket: WebSocket;
@@ -8,13 +8,17 @@ export type Player = {
   UUID: string;
 };
 
+export interface InternalGameState extends GameState {
+  plays: (Move | null)[]; // 'Hidden' is just a Move in the !tzarsTurn phase
+}
+
 export type Room = {
   players: Player[];
   creator: Player;
   broadcasters: Player[];
   createdAt: Date;
   updatedAt: Date;
-  state?: GameState;
+  state?: InternalGameState;
   settings: GameSettings;
 };
 

@@ -18,7 +18,11 @@ import {
   EndStandingsMessage,
   EndStandingsResponse,
 } from "./model";
-import { createGameState, createSettings } from "./create";
+import {
+  convertGameState,
+  createInternalGameState,
+  createSettings,
+} from "./create";
 import { rooms, Player, createRoomID, createUUID, Room } from "./state";
 import log from "./log";
 const { app } = expressWs(express());
@@ -34,7 +38,7 @@ export function createError(error: string): string {
 }
 
 function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
-  if (!m.userID || !m.userName) return ws.send(createError("No user ID"));
+  if (!m.userID || !m.username) return ws.send(createError("No user ID"));
 
   let roomID: string;
   if (m.roomID && !rooms.has(m.roomID)) roomID = m.roomID;
@@ -43,7 +47,7 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
     while (rooms.has(roomID));
 
   const time = new Date();
-  const player: Player = { name: m.userName, socket: ws, UUID: m.userID };
+  const player: Player = { name: m.username, socket: ws, UUID: m.userID };
   const players: Player[] = [player];
   const settings = createSettings();
   rooms.set(roomID, {
@@ -58,7 +62,7 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
     type: MessageType.CREATE_ROOM,
     roomID,
     players: players.map(({ name }) => name),
-    creator: m.userName,
+    creator: m.username,
     settings,
   };
   ws.send(JSON.stringify(res));
@@ -66,13 +70,13 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
 }
 
 function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
-  if (!m.userID || !m.userName) return ws.send(createError("No user ID"));
+  if (!m.userID || !m.username) return ws.send(createError("No user ID"));
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
     return ws.send(createError("Incorrect room ID"));
 
-  const existing = room.players.find((player) => player.name === m.userName);
+  const existing = room.players.find((player) => player.name === m.username);
   if (existing) {
     const closedStates: (0 | 1 | 2 | 3)[] = [WS.CLOSING, WS.CLOSED];
     // If connection was closed, allow hijacking
@@ -88,7 +92,7 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
 
   // TODO: Enables hijacking, pls fix maybe
   if (!existing)
-    room.players.push({ name: m.userName, socket: ws, UUID: m.userID });
+    room.players.push({ name: m.username, socket: ws, UUID: m.userID });
 
   const joinRes: JoinRoomResponse = {
     type: MessageType.JOIN_ROOM,
@@ -102,7 +106,7 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
   const update: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
     players: room.players.map(({ name }) => name),
-    update: `User ${m.userName} joined the room`,
+    update: `User ${m.username} joined the room`,
   };
   otherPlayers.forEach((otherPlayer) =>
     otherPlayer.send(JSON.stringify(update))
@@ -157,10 +161,10 @@ function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
 
-  room.state = createGameState(room.players.map(({ name }) => name));
+  room.state = createInternalGameState(room.players.map(({ name }) => name));
   const update: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
-    state: room.state,
+    state: convertGameState(room.state),
     update: "Game started",
     settings: room.settings,
   };

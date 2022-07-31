@@ -1,10 +1,11 @@
-import { GameSettings, GameState, RoomDetails } from ".";
+import { Card, FullCard, GameSettings, GameState, Move, RoomDetails } from ".";
 export type Message =
   | CreateRoomMessage
   | JoinRoomMessage
   | RearrangePlayersMessage
   | BeginMessage
   | MakeMoveMessage
+  | PickWinnerMessage
   | UpdateSettingsMessage
   | EndStandingsMessage;
 
@@ -18,6 +19,7 @@ export enum MessageType {
   ERROR = "ERROR",
   ASSIGN_UUID = "ASSIGN_UUID",
   MAKE_MOVE = "MAKE_MOVE",
+  PICK_WINNER = "PICK_WINNER",
   END_GAME = "END_GAME",
   END_STANDINGS = "END_STANDINGS",
 }
@@ -26,13 +28,13 @@ type UUID = string;
 export type CreateRoomMessage = {
   type: MessageType.CREATE_ROOM;
   userID: UUID;
-  userName: string;
+  username: string;
   roomID?: string;
 };
 export type JoinRoomMessage = {
   type: MessageType.JOIN_ROOM;
   userID: UUID;
-  userName: string;
+  username: string;
   roomID: string;
 };
 export type UpdateSettingsMessage = {
@@ -54,6 +56,12 @@ export type BeginMessage = {
 };
 export type MakeMoveMessage = {
   type: MessageType.MAKE_MOVE;
+  roomID: string;
+  userID: UUID;
+  move: Omit<Move, "player">;
+};
+export type PickWinnerMessage = {
+  type: MessageType.PICK_WINNER;
   roomID: string;
   userID: UUID;
 };
@@ -81,6 +89,7 @@ export type JoinRoomResponse = RoomDetails & {
 export type UpdateRoomResponse = Partial<Omit<RoomDetails, "roomID">> & {
   type: MessageType.UPDATE_ROOM;
   update: string;
+  newCards?: Record<"top" | "bottom", FullCard[]>;
 };
 export type AssignUUIDResponse = {
   type: MessageType.ASSIGN_UUID;

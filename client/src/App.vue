@@ -18,6 +18,10 @@ import Room from "./components/Room.vue";
 import Game from "./components/Game.vue";
 import GameEnd from "./components/GameEnd.vue";
 import { stopConfetti } from "./confetti";
+import Debug from "./components/Debug.vue";
+
+import { ws } from "./comms";
+import { username } from "./state";
 
 export type MakeMoveFunction = (args: {
   row?: number;
@@ -25,7 +29,6 @@ export type MakeMoveFunction = (args: {
   // plate?: MakeMoveMessage["plate"];
 }) => void;
 
-const username = ref<string>();
 const UUID = ref<string>();
 const roomDetails = ref<RoomDetails>();
 const standings = ref<string[]>();
@@ -33,11 +36,6 @@ const standings = ref<string[]>();
 const ERROR = "ERROR";
 
 const notifs = ref<{ message: string; error: boolean }[]>([]);
-
-let host = location.origin.replace(/^http/, "ws");
-if (host.match("ws://localhost")) host = "ws://localhost:8080";
-
-const ws = new WebSocket(host + "/ws");
 
 const addNotif = (message: string, isError?: typeof ERROR) => {
   notifs.value.push({ message, error: !!isError });
@@ -102,7 +100,7 @@ const onJoin = (userName: string, roomID: string) => {
   username.value = userName;
   const msg: JoinRoomMessage = {
     type: MessageType.JOIN_ROOM,
-    userName,
+    username: userName,
     userID: UUID.value,
     roomID,
   };
@@ -113,7 +111,7 @@ const onCreate = (userName: string) => {
   username.value = userName;
   const msg: CreateRoomMessage = {
     type: MessageType.CREATE_ROOM,
-    userName: userName,
+    username: userName,
     userID: UUID.value,
   };
   ws.send(JSON.stringify(msg));
@@ -211,6 +209,7 @@ const onEndStandings = () => {
     :username="username"
     :endGame="true ? onEndStandings : undefined"
   />
+  <Debug />
 </template>
 
 <style>

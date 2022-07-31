@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 import Input from "./Input.vue";
+import { username } from "../state";
 
 defineProps<{
   onJoin: (username: string, roomCode: string) => void;
   onCreate: (username: string) => void;
 }>();
-const username = ref<string>(localStorage.getItem("username") ?? "");
+// const username = ref<string>(localStorage.getItem("username") ?? "");
 const roomCode = ref<string>(location.hash.slice(1));
 window.addEventListener("hashchange", () => {
   roomCode.value = location.hash.slice(1);
@@ -23,10 +24,7 @@ const roomcodeError = ref<boolean>(false);
 <template>
   <div class="flex flex-col items-center justify-center w-screen h-screen">
     <h1 class="text-6xl">Meme Game</h1>
-    <p>
-      Provided by simon-green and
-      <a href="https://mads.monster/Memes">www.mads.monster</a>
-    </p>
+    <p>Provided by me and my buddy Mads</p>
     <Input
       class="mt-8 mb-32"
       :class="{
