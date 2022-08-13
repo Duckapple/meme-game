@@ -1,12 +1,13 @@
 import lodash from "lodash";
-const { shuffle } = lodash;
-import type { GameSettings, GameState, Hidden } from "./model";
+const { pick, shuffle } = lodash;
+import type { GameSettings, GameState, Hidden, Visual } from "./model";
 import { InternalGameState } from "./state";
-import { refresh, toptexts, bottomtexts, visuals, Visual } from "./api";
+import { refresh, toptexts, bottomtexts, visuals } from "./api";
 
 export function createSettings(): GameSettings {
   return {
     handSize: 7,
+    discardsPerRound: 0,
   };
 }
 
@@ -30,6 +31,7 @@ export async function createInternalGameState(
     })),
     visual: piles.visuals.splice(0, 1)[0].filename,
     piles,
+    yourPlay: null,
   };
 }
 
@@ -39,8 +41,6 @@ export function convertGameState(state: InternalGameState): GameState {
   );
   return {
     plays,
-    currentTzar: state.currentTzar,
-    tzarsTurn: state.tzarsTurn,
-    visual: state.visual,
+    ...pick(state, ["currentTzar", "tzarsTurn", "visual", "yourPlay"]),
   };
 }

@@ -3,6 +3,7 @@ import { store, username } from "../state";
 import { ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { MessageType } from "../model";
+import { propsToAttrMap } from "@vue/shared";
 const isDebug = store.settings.debug || false;
 const showDebug = ref(false);
 
@@ -63,6 +64,26 @@ const handleSend = (msgType: string, json: Record<string, any>) => {
   );
 };
 
+const handleLookup = (elementType: string, data: any) => {
+  if (!["bottom", "top", "visual"].includes(elementType)) {
+    lines.value.push([{ class: "text-red-500", text: "Invalid element type" }]);
+    return;
+  }
+  if (elementType === "visual") {
+    lines.value.push([
+      { class: "text-red-500", text: "Not supported yet lol" },
+    ]);
+  } else {
+    ws.send(
+      JSON.stringify({
+        type: MessageType.LOOKUP,
+        elementType,
+        data: data ?? {},
+      })
+    );
+  }
+};
+
 const onEnter = (e: KeyboardEvent) => {
   if (e.key !== "Enter" || e.shiftKey) return;
   e.preventDefault();
@@ -79,6 +100,15 @@ const onEnter = (e: KeyboardEvent) => {
       try {
         let parsed = JSON.parse(json.join(" "));
         handleSend(type, parsed);
+      } catch {
+        lines.value.push([{ class: "text-red-500", text: "Wrong JSON" }]);
+      }
+    } else if (value.value.startsWith("lookup ")) {
+      const [_, type, ...json] = value.value.split(" ");
+      try {
+        let parsed: any;
+        parsed = json.length > 0 ? JSON.parse(json.join(" ")) : undefined;
+        handleLookup(type, parsed);
       } catch {
         lines.value.push([{ class: "text-red-500", text: "Wrong JSON" }]);
       }

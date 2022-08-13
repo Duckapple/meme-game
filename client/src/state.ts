@@ -21,5 +21,8 @@ watch(store, (val) => {
   localStorage.setItem(localStoreKey, stringified);
 });
 
-export const username = ref<string>(localStorage.getItem("username") ?? "");
+export const username = ref<string>(
+  localStorage.getItem("meme_game_username") ?? ""
+);
+export const UUID = ref<string>(localStorage.getItem("meme_game_UUID") ?? "");
 export const visual_cdn = ref<string>();

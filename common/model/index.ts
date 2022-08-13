@@ -5,11 +5,12 @@ export type Hidden = "HIDDEN";
 export type Card = { id: number };
 
 export type FullCard = Card & { text: string };
+export type Visual = { id: number; filename: string };
 
 export type Move = {
   player: string;
-  top: Card;
-  bottom: Card;
+  top: FullCard;
+  bottom: FullCard;
 };
 
 export type RoomDetails = {
@@ -22,6 +23,7 @@ export type RoomDetails = {
 
 export interface GameSettings {
   handSize: number;
+  discardsPerRound: number;
 }
 
 export interface GameState {
@@ -29,6 +31,7 @@ export interface GameState {
   currentTzar: number;
   tzarsTurn: boolean;
   plays: (Move | Hidden | null)[];
+  yourPlay: Move | null;
 }
 
 export type Tuple<T, N extends number> = number extends N

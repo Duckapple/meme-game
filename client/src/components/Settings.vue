@@ -6,34 +6,39 @@ const props = defineProps<{
   isCreator: boolean;
   onChanged: () => void;
 }>();
+
+const setKey = (key: keyof GameSettings, e: Event) => {
+  const val = Number((e.target as HTMLInputElement).value);
+  if (!isNaN(val)) props.settings[key] = val;
+};
 </script>
 
 <template>
-  <!-- <table>
+  <table>
     <tr>
       <td>
-        <span>Column Points:</span>
+        <span>Hand Size:</span>
         <input
           v-if="isCreator"
-          :value="settings.pointRewards.column"
-          @input="(e) => setReward(e, 'column')"
+          :value="settings.handSize"
+          @input="(e) => setKey('handSize', e)"
         />
         <span v-if="!isCreator" class="mr-0">
-          {{ settings.pointRewards.column }}
+          {{ settings.handSize }}
         </span>
       </td>
       <td>
-        <span>Row Points:</span>
+        <span>Discards per round:</span>
         <input
           v-if="isCreator"
-          :value="settings.pointRewards.row"
-          @input="(e) => setReward(e, 'row')"
+          :value="settings.discardsPerRound"
+          @input="(e) => setKey('discardsPerRound', e)"
         />
         <span v-if="!isCreator" class="mr-0">
-          {{ settings.pointRewards.row }}
+          {{ settings.discardsPerRound }}
         </span>
       </td>
-      <td>
+      <!-- <td>
         <span>All Color Points:</span>
         <input
           v-if="isCreator"
@@ -43,9 +48,9 @@ const props = defineProps<{
         <span v-if="!isCreator" class="mr-0">
           {{ settings.pointRewards.color }}
         </span>
-      </td>
+      </td> -->
     </tr>
-    <tr>
+    <!-- <tr>
       <td class="w-full">
         <span>Penalty Points</span>
         <input
@@ -62,8 +67,16 @@ const props = defineProps<{
           {{ penalty }}
         </span>
       </td>
-    </tr>
-  </table> -->
+    </tr> -->
+  </table>
+  <div class="flex items-center pt-4">
+    <label for="toptext">Can omit top text?</label>
+    <input type="checkbox" name="toptext" id="toptext" />
+  </div>
+  <div class="flex items-center pt-2">
+    <label for="bottomtext">Can omit bottom text?</label>
+    <input type="checkbox" name="bottomtext" id="bottomtext" />
+  </div>
 </template>
 
 <style scoped>

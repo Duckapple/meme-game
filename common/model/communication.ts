@@ -1,5 +1,14 @@
-import { Card, FullCard, GameSettings, GameState, Move, RoomDetails } from ".";
+import {
+  Card,
+  FullCard,
+  GameSettings,
+  GameState,
+  Move,
+  RoomDetails,
+  Visual,
+} from ".";
 export type Message =
+  | AssignUUIDMessage
   | CreateRoomMessage
   | JoinRoomMessage
   | RearrangePlayersMessage
@@ -7,7 +16,8 @@ export type Message =
   | MakeMoveMessage
   | PickWinnerMessage
   | UpdateSettingsMessage
-  | EndStandingsMessage;
+  | EndStandingsMessage
+  | LookupMessage;
 
 export enum MessageType {
   CREATE_ROOM = "CREATE_ROOM",
@@ -22,9 +32,14 @@ export enum MessageType {
   PICK_WINNER = "PICK_WINNER",
   END_GAME = "END_GAME",
   END_STANDINGS = "END_STANDINGS",
+  LOOKUP = "LOOKUP",
 }
 
 type UUID = string;
+export type AssignUUIDMessage = {
+  type: MessageType.ASSIGN_UUID;
+  userID?: UUID | null;
+};
 export type CreateRoomMessage = {
   type: MessageType.CREATE_ROOM;
   userID: UUID;
@@ -70,6 +85,18 @@ export type EndStandingsMessage = {
   roomID: string;
   userID: UUID;
 };
+export type LookupMessage = {
+  type: MessageType.LOOKUP;
+} & (
+  | {
+      elementType: "top" | "bottom";
+      data: Partial<FullCard>;
+    }
+  | {
+      elementType: "visual";
+      data: Partial<Visual>;
+    }
+);
 
 export type MessageResponse =
   | CreateRoomResponse
@@ -78,6 +105,7 @@ export type MessageResponse =
   | AssignUUIDResponse
   | EndGameResponse
   | EndStandingsResponse
+  | LookupResponse
   | ErrorResponse;
 
 export type CreateRoomResponse = RoomDetails & {
@@ -104,6 +132,12 @@ export type EndGameResponse = {
 export type EndStandingsResponse = {
   type: MessageType.END_STANDINGS;
 };
+export type LookupResponse = {
+  type: MessageType.LOOKUP;
+} & (
+  | { elementType: "top" | "bottom"; data?: FullCard }
+  | { elementType: "visual"; data?: Visual }
+);
 export type ErrorResponse = {
   type: MessageType.ERROR;
   error: string;

@@ -17,6 +17,9 @@ import {
   UpdateSettingsMessage,
   EndStandingsMessage,
   EndStandingsResponse,
+  AssignUUIDMessage,
+  LookupMessage,
+  LookupResponse,
 } from "./model";
 import {
   convertGameState,
@@ -26,14 +29,21 @@ import {
 import { rooms, Player, createRoomID, createUUID, Room } from "./state";
 import log from "./log";
 import { exit } from "process";
+import { bottomtexts, toptexts, visuals } from "./api";
 const { app } = expressWs(express());
 const port = process.env.PORT || 8080;
-const visual_cdn = process.env.VISUAL_CDN;
 
-if (!visual_cdn) {
-  log("Env variable VISUAL_CDN not set! Exiting...");
-  exit();
-}
+const ensureEnv = (key: string): string => {
+  const val = process.env[key];
+  if (!val) {
+    log(`Env variable ${key} not set! Exiting...`);
+    exit();
+  }
+  return val;
+};
+
+const visual_cdn = ensureEnv("VISUAL_CDN");
+// const jwt_secret = ensureEnv("JWT_SECRET");
 
 export function createError(error: string): string {
   const err: ErrorResponse = {
@@ -106,7 +116,7 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
     creator: room.creator.name,
     players: room.players.map(({ name }) => name),
     roomID: m.roomID,
-    state: room.state,
+    state: room.state && convertGameState(room.state),
     settings: room.settings,
   };
   ws.send(JSON.stringify(joinRes));
@@ -325,20 +335,51 @@ function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
   log(`Ended standings for ${m.roomID}`);
 }
 
-app.ws("/ws", (ws) => {
-  setTimeout(() => {
-    const greeting: AssignUUIDResponse = {
-      type: MessageType.ASSIGN_UUID,
-      userID: createUUID(),
-      visual_cdn,
-    };
-    ws.send(JSON.stringify(greeting));
-    log(`New connection, gave ID ${greeting.userID}`);
-  }, 200);
+function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
+  let userID = m.userID;
+  if (!userID) {
+    userID = createUUID();
+    log(`New connection, gave ID ${userID}`);
+  } else {
+    log(`New connection, recieved ID ${userID}`);
+  }
+  const greeting: AssignUUIDResponse = {
+    type: MessageType.ASSIGN_UUID,
+    userID,
+    visual_cdn,
+  };
+  ws.send(JSON.stringify(greeting));
+}
 
+function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
+  if (m.elementType === "visual") {
+    const res: LookupResponse = {
+      type: MessageType.LOOKUP,
+      elementType: "visual",
+      data: visuals.find(
+        ({ filename, id }) =>
+          (m.data.filename && m.data.filename === filename) || m.data.id === id
+      ),
+    };
+    ws.send(JSON.stringify(res));
+  } else {
+    const cards = m.elementType === "bottom" ? bottomtexts : toptexts;
+    const res: LookupResponse = {
+      type: MessageType.LOOKUP,
+      elementType: m.elementType,
+      data: cards.find(
+        ({ text, id }) =>
+          (m.data.text && m.data.text === text) || m.data.id === id
+      ),
+    };
+    ws.send(JSON.stringify(res));
+  }
+}
+
+app.ws("/ws", (ws) => {
   const timer = setInterval(() => {
-    ws.ping(undefined, undefined, (e) => {
-      e && clearInterval(timer);
+    ws.ping(undefined, undefined, (error) => {
+      error && clearInterval(timer);
     });
   }, 30000);
 
@@ -351,7 +392,9 @@ app.ws("/ws", (ws) => {
       ws.send(createError("Invalid message"));
       return;
     }
-    if (m.type === MessageType.CREATE_ROOM) {
+    if (m.type === MessageType.ASSIGN_UUID) {
+      handleAssignUuid(ws, m);
+    } else if (m.type === MessageType.CREATE_ROOM) {
       handleCreateRoom(ws, m);
     } else if (m.type === MessageType.JOIN_ROOM) {
       handleJoinRoom(ws, m);
@@ -365,6 +408,8 @@ app.ws("/ws", (ws) => {
       handleUpdateSettings(ws, m);
     } else if (m.type === MessageType.END_STANDINGS) {
       handleEndStandings(ws, m);
+    } else if (m.type === MessageType.LOOKUP) {
+      handleLookup(ws, m);
     } else {
       log(`Unknown message '${msg}'`);
     }

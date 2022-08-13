@@ -11,7 +11,7 @@ defineProps<{
 <template>
   <div class="flex flex-col items-center group">
     <input
-      class="pt-4 pb-2 text-4xl text-center text-gray-800 bg-transparent w-md dark:text-gray-100 dark:bg-gray-800"
+      class="pt-4 pb-2 text-4xl text-center text-gray-800 bg-transparent bg-gray-100 w-md dark:text-gray-100 dark:bg-gray-800"
       :name="name"
       :type="password ? 'password' : 'text'"
       :placeholder="placeholder"

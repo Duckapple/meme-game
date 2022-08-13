@@ -13,6 +13,7 @@ import {
   UpdateSettingsMessage,
   EndStandingsMessage,
   FullCard,
+  AssignUUIDMessage,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -22,7 +23,7 @@ import { stopConfetti } from "./confetti";
 import Debug from "./components/Debug.vue";
 
 import { ws } from "./comms";
-import { username, visual_cdn } from "./state";
+import { username, UUID, visual_cdn } from "./state";
 
 export type MakeMoveFunction = (args: {
   row?: number;
@@ -30,7 +31,6 @@ export type MakeMoveFunction = (args: {
   // plate?: MakeMoveMessage["plate"];
 }) => void;
 
-const UUID = ref<string>();
 const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
   top: [],
   bottom: [],
@@ -59,7 +59,7 @@ ws.addEventListener("message", (evt) => {
   }
 
   if (m.type === MessageType.ASSIGN_UUID) {
-    UUID.value = m.userID;
+    if (!UUID.value) UUID.value = m.userID;
     visual_cdn.value = m.visual_cdn;
   } else if (m.type === MessageType.CREATE_ROOM) {
     location.hash = `#${m.roomID}`;
@@ -74,6 +74,10 @@ ws.addEventListener("message", (evt) => {
       roomDetails.value = {
         ...roomDetails.value,
         ...omit(m, ["type", "newCards"]),
+        state: m.state && {
+          ...roomDetails.value.state,
+          ...m.state,
+        },
       };
     }
     if (m.newCards) {
@@ -95,6 +99,8 @@ ws.addEventListener("message", (evt) => {
     roomDetails.value = undefined;
     hand.value = undefined;
     location.hash = "";
+  } else if (m.type === MessageType.LOOKUP) {
+    // Do nothing :)
   } else {
     addNotif(`Got unhandled message '${evt.data}'`);
   }
@@ -102,6 +108,11 @@ ws.addEventListener("message", (evt) => {
 
 ws.addEventListener("open", () => {
   addNotif("Connected to server");
+  const msg: AssignUUIDMessage = {
+    type: MessageType.ASSIGN_UUID,
+    userID: UUID.value,
+  };
+  ws.send(JSON.stringify(msg));
 });
 ws.addEventListener("close", () => {
   addNotif("Disconnected from server");
@@ -232,10 +243,10 @@ body {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply flex flex-col text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-200 dark:border-gray-200;
+  @apply flex flex-col text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-200 border-gray-800 dark:border-gray-200;
 }
 
 .btn {
-  @apply border-2 border-white cursor-pointer hover:underline transition hover:-translate-y-2 hover:shadow;
+  @apply border-2 cursor-pointer hover:underline transition hover:-translate-y-2 hover:shadow border-gray-800 dark:border-gray-200;
 }
 </style>

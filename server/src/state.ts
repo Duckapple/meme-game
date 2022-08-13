@@ -1,7 +1,13 @@
 import { WebSocket } from "ws";
 import { randomInt, randomUUID } from "crypto";
-import { FullCard, GameSettings, GameState, Hidden, Move } from "./model";
-import type { Visual } from "./api";
+import {
+  FullCard,
+  GameSettings,
+  GameState,
+  Hidden,
+  Move,
+  Visual,
+} from "./model";
 
 export type Player = {
   socket: WebSocket;
