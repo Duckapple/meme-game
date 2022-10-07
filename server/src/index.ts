@@ -20,6 +20,7 @@ import {
   AssignUUIDMessage,
   LookupMessage,
   LookupResponse,
+  Move,
 } from "./model";
 import {
   convertGameState,
@@ -37,6 +38,7 @@ const ensureEnv = (key: string): string => {
   const val = process.env[key];
   if (!val) {
     log(`Env variable ${key} not set! Exiting...`);
+    log("");
     exit();
   }
   return val;
@@ -213,21 +215,83 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 
   if (playerIndex === -1) return ws.send(createError("Invalid user ID"));
 
-  if (!room.state) return ws.send(createError("Game not in progress"));
+  const state = room.state;
+  if (!state) return ws.send(createError("Game not in progress"));
 
-  if (
-    room.state.currentTzar !==
-    room.players.findIndex(({ UUID }) => m.userID === UUID)
-  )
+  log({ playerIndex, currentTzar: state.currentTzar });
+
+  if (state.tzarsTurn === (state.currentTzar !== playerIndex))
     return ws.send(createError("Cannot make a move when not your turn"));
+
+  if (state.plays[playerIndex])
+    return ws.send(createError("Cannot make additional moves on your turn"));
+
+  if (!room.settings.canOmit.top && !m.move.top)
+    return ws.send(createError("Cannot omit top text"));
+  if (!room.settings.canOmit.bottom && !m.move.bottom)
+    return ws.send(createError("Cannot omit bottom text"));
+
+  let move: Move = { player: m.userID };
+  const mt = m.move.top;
+  if (mt) {
+    const topCardIndex = state.hands[playerIndex].top.findIndex(
+      ({ id }) => mt.id === id
+    );
+    if (topCardIndex === -1)
+      return ws.send(
+        createError("You do not have the top card you tried to play!")
+      );
+    move.top = state.hands[playerIndex].top[topCardIndex];
+    cleanup.push(() => state.hands[playerIndex].top.splice(topCardIndex, 1));
+  }
+  const mb = m.move.bottom;
+  if (mb) {
+    const bottomCardIndex = state.hands[playerIndex].bottom.findIndex(
+      ({ id }) => mb.id === id
+    );
+    if (bottomCardIndex === -1)
+      return ws.send(
+        createError("You do not have the bottom card you tried to play!")
+      );
+    move.bottom = state.hands[playerIndex].bottom[bottomCardIndex];
+    cleanup.push(() =>
+      state.hands[playerIndex].bottom.splice(bottomCardIndex, 1)
+    );
+  }
+
+  state.plays[playerIndex] = move;
+
+  cleanup.forEach((f) => f());
+
+  // If only one player (the tzar) hasn't played, then progress
+  if (state.plays.filter((v) => v == null).length <= 1) {
+    state.tzarsTurn = true;
+  }
 
   const msg: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
-    state: room.state,
-    update: `${room.players[playerIndex].name}`,
+    state: convertGameState(state),
+    update: `${room.players[playerIndex].name} made a move`,
   };
 
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  const response: UpdateRoomResponse = {
+    ...msg,
+    update: `You made a move`,
+    moveState: {
+      bottom: mb?.id,
+      top: mt?.id,
+    },
+  };
+
+  for (const { socket, UUID } of room.players) {
+    if (m.userID === UUID) {
+      socket.send(JSON.stringify(response));
+    } else {
+      socket.send(JSON.stringify(msg));
+    }
+  }
+
+  // room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
 
   // if (isEndOfRound(room.state)) {
   //   const msg: UpdateRoomResponse = {

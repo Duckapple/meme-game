@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { store, username } from "../state";
+import { store, username, UUID, roomDetails } from "../state";
 import { ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { MessageType } from "../model";
@@ -58,6 +58,8 @@ const handleSend = (msgType: string, json: Record<string, any>) => {
   ws.send(
     JSON.stringify({
       username: username.value,
+      userID: UUID.value,
+      roomID: roomDetails.value?.roomID,
       ...json,
       type: msgType,
     })

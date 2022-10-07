@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from "vue";
+import type { RoomDetails } from "./model";
 
 const localStoreKey = "meme-game-store";
 
@@ -24,5 +25,15 @@ watch(store, (val) => {
 export const username = ref<string>(
   localStorage.getItem("meme_game_username") ?? ""
 );
-export const UUID = ref<string>(localStorage.getItem("meme_game_UUID") ?? "");
+watch(username, (username) => {
+  localStorage.setItem("meme_game_username", username);
+});
+
+export const UUID = ref<string>(sessionStorage.getItem("meme_game_UUID") ?? "");
+watch(UUID, (UUID) => {
+  sessionStorage.setItem("meme_game_UUID", UUID);
+});
+
 export const visual_cdn = ref<string>();
+
+export const roomDetails = ref<RoomDetails>();

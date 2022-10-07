@@ -1,11 +1,14 @@
 <script lang="ts" setup>
-import { computed, effect, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { MakeMoveFunction } from "../App.vue";
-import type { GameState, GameSettings, FullCard, Move, Card } from "../model";
-import { store, visual_cdn } from "../state";
-import Tile from "./Tile.vue";
-import { mapValues } from "lodash";
-import { setTitle } from "../title";
+import type {
+  GameState,
+  GameSettings,
+  FullCard,
+  Move,
+  MoveState,
+} from "../model";
+import { visual_cdn } from "../state";
 
 const props = defineProps<{
   state: GameState;
@@ -14,8 +17,11 @@ const props = defineProps<{
   username: string;
   creator: string;
   settings: GameSettings;
-  // onMakeMove: MakeMoveFunction;
+  onMakeMove: MakeMoveFunction;
+  moveState?: MoveState;
 }>();
+
+const CANVAS_SIZE = 1000;
 
 const incomingMove = ref<Partial<Move>>();
 
@@ -29,14 +35,15 @@ const updateIncomingMove = <K extends keyof Move>(key: K, value: Move[K]) => {
 const stateText = computed(() => {
   return JSON.stringify({ ...props.state, hand: props.hand }, null, 2);
 });
+const isTzar = computed(
+  () => props.players[props.state.currentTzar] === props.username
+);
 const visualUrl = computed(() => {
   return props.state.visual ? visual_cdn.value + props.state.visual : undefined;
 });
 const visual = ref<{ image?: HTMLImageElement; url?: string }>({});
 const hasLoaded = ref(false);
-// visual.value?.addEventListener("load", () => {
-//   hasLoaded.value = true;
-// });
+
 const canvas = ref<HTMLCanvasElement>();
 async function redraw() {
   let promise: Promise<HTMLImageElement | undefined>;
@@ -77,23 +84,23 @@ async function redraw() {
     image.height * ratio
   );
   ctx.textAlign = "center";
-  ctx.font = "50px Impacto";
+  ctx.font = `${CANVAS_SIZE / 20}px Impacto`;
   ctx.fillStyle = "white";
   ctx.strokeStyle = "black";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = CANVAS_SIZE / 200;
   const top = incomingMove.value?.top;
   if (top) {
     ctx.strokeText(
       top.text.toUpperCase(),
       cvs.width / 2,
-      75,
-      image.width * ratio
+      (1.5 * CANVAS_SIZE) / 20,
+      image.width * ratio - CANVAS_SIZE / 20
     );
     ctx.fillText(
       top.text.toUpperCase(),
       cvs.width / 2,
-      75,
-      image.width * ratio
+      (1.5 * CANVAS_SIZE) / 20,
+      image.width * ratio - CANVAS_SIZE / 20
     );
   }
   const bottom = incomingMove.value?.bottom;
@@ -101,14 +108,14 @@ async function redraw() {
     ctx.strokeText(
       bottom.text.toUpperCase(),
       cvs.width / 2,
-      975,
-      image.width * ratio
+      CANVAS_SIZE - (0.5 * CANVAS_SIZE) / 20,
+      image.width * ratio - CANVAS_SIZE / 20
     );
     ctx.fillText(
       bottom.text.toUpperCase(),
       cvs.width / 2,
-      975,
-      image.width * ratio
+      CANVAS_SIZE - (0.5 * CANVAS_SIZE) / 20,
+      image.width * ratio - CANVAS_SIZE / 20
     );
   }
 }
@@ -125,21 +132,21 @@ watch(
 
 <template>
   <div class="flex">
-    <div class="m-8 flex flex-col max-w-[58rem]">
+    <div class="p-8 flex flex-col max-w-[58rem]">
       <div class="flex flex-wrap"></div>
-      <div class="flex flex-wrap py-8">
-        <div class="h-16"></div>
-      </div>
       <div class="flex space-x-2 overflow-x-auto overflow-y-visible">
         <div
+          v-for="top in hand.top"
           class="relative w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
           :class="{
             '-translate-y-2 bg-gray-100 dark:bg-gray-700':
               top === incomingMove?.top,
             'bg-gray-50 dark:bg-gray-800': top !== incomingMove?.top,
+            disabled: isTzar || moveState,
           }"
-          v-for="top in hand.top"
-          @click="() => updateIncomingMove('top', top)"
+          @click="
+            () => !(isTzar || moveState) && updateIncomingMove('top', top)
+          "
         >
           <span>{{ top.text }}</span>
           <span class="absolute text-xs right-2 bottom-2">{{ top.id }}</span>
@@ -147,14 +154,17 @@ watch(
       </div>
       <div class="flex pt-4 space-x-2 overflow-x-auto overflow-y-visible">
         <div
+          v-for="bottom in hand.bottom"
           class="relative w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
           :class="{
             '-translate-y-2 bg-gray-100 dark:bg-gray-700':
               bottom === incomingMove?.bottom,
             'bg-gray-50 dark:bg-gray-800': bottom !== incomingMove?.bottom,
+            disabled: isTzar || moveState,
           }"
-          v-for="bottom in hand.bottom"
-          @click="() => updateIncomingMove('bottom', bottom)"
+          @click="
+            () => !(isTzar || moveState) && updateIncomingMove('bottom', bottom)
+          "
         >
           <span class="break-words">{{ bottom.text }}</span>
           <span class="absolute text-xs right-2 bottom-2">{{ bottom.id }}</span>
@@ -164,42 +174,22 @@ watch(
         <canvas
           ref="canvas"
           class="font-[Impacto] max-w-[48rem] max-h-[48rem]"
-          height="1000"
-          width="1000"
-          >This no workey :(</canvas
+          :height="CANVAS_SIZE"
+          :width="CANVAS_SIZE"
         >
+          This no workey :(
+        </canvas>
       </div>
-      <div v-if="visualUrl" class="relative">
-        <!-- <img
-          :src="visualUrl"
-          ref="visual"
-          alt="The image currently displayed"
-        /> -->
-        <!-- <span
-          class="absolute top-0 left-0 right-0 text-center font-[Impacto] text-4xl"
-          v-if="incomingMove?.top"
-          >{{ incomingMove.top.text }}</span
-        >
-        <span
-          class="absolute bottom-0 left-0 right-0 text-center font-[Impacto] text-4xl"
-          v-if="incomingMove?.bottom"
-          >{{ incomingMove.bottom.text }}</span
-        > -->
-      </div>
-      <!-- <pre>{{ stateText }}</pre> -->
-      <!-- <div>
-        <label
-          for="colorBlindCheck"
-          class="px-1 mr-2 font-serif border rounded-md"
-        >
-          T
-        </label>
-        <input
-          type="checkbox"
-          id="colorBlindCheck"
-          v-model="store.settings.colorBlind"
-        />
-      </div> -->
+      <button
+        :class="{ disabled: isTzar || moveState }"
+        class="btn"
+        @click="
+          () =>
+            !(isTzar || moveState) && incomingMove && onMakeMove(incomingMove)
+        "
+      >
+        <span class="block px-8 py-4 cursor-pointer">Make Move</span>
+      </button>
     </div>
     <div class="flex flex-col w-0 h-0 m-8 scale-50"></div>
   </div>

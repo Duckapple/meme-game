@@ -7,7 +7,7 @@ const props = defineProps<{
   onChanged: () => void;
 }>();
 
-const setKey = (key: keyof GameSettings, e: Event) => {
+const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
   const val = Number((e.target as HTMLInputElement).value);
   if (!isNaN(val)) props.settings[key] = val;
 };
@@ -71,11 +71,21 @@ const setKey = (key: keyof GameSettings, e: Event) => {
   </table>
   <div class="flex items-center pt-4">
     <label for="toptext">Can omit top text?</label>
-    <input type="checkbox" name="toptext" id="toptext" />
+    <input
+      type="checkbox"
+      name="toptext"
+      id="toptext"
+      v-model="settings.canOmit.top"
+    />
   </div>
   <div class="flex items-center pt-2">
     <label for="bottomtext">Can omit bottom text?</label>
-    <input type="checkbox" name="bottomtext" id="bottomtext" />
+    <input
+      type="checkbox"
+      name="bottomtext"
+      id="bottomtext"
+      v-model="settings.canOmit.bottom"
+    />
   </div>
 </template>
 

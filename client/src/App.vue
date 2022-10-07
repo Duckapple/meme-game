@@ -14,6 +14,8 @@ import {
   EndStandingsMessage,
   FullCard,
   AssignUUIDMessage,
+  Move,
+  MoveState,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -23,19 +25,15 @@ import { stopConfetti } from "./confetti";
 import Debug from "./components/Debug.vue";
 
 import { ws } from "./comms";
-import { username, UUID, visual_cdn } from "./state";
+import { username, UUID, visual_cdn, roomDetails } from "./state";
 
-export type MakeMoveFunction = (args: {
-  row?: number;
-  // middle?: TileColor;
-  // plate?: MakeMoveMessage["plate"];
-}) => void;
+export type MakeMoveFunction = (args: Partial<Move>) => void;
 
 const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
   top: [],
   bottom: [],
 });
-const roomDetails = ref<RoomDetails>();
+const moveState = ref<MoveState>();
 const standings = ref<string[]>();
 
 const ERROR = "ERROR";
@@ -87,6 +85,9 @@ ws.addEventListener("message", (evt) => {
         hand.value.top.push(...m.newCards.top);
       }
     }
+    if (m.moveState) {
+      moveState.value = m.moveState;
+    }
     if (m.update) addNotif(m.update);
   } else if (m.type === MessageType.ERROR) {
     if (m.error) addNotif(m.error, ERROR);
@@ -114,7 +115,7 @@ ws.addEventListener("open", () => {
   };
   ws.send(JSON.stringify(msg));
 });
-ws.addEventListener("close", () => {
+ws.addEventListener("close", (ev) => {
   addNotif("Disconnected from server");
   roomDetails.value = undefined;
   location.hash = "";
@@ -171,21 +172,20 @@ const onBegin = () => {
   ws.send(JSON.stringify(msg));
 };
 
-/* const onMakeMove: MakeMoveFunction = (args) => {
+const onMakeMove: MakeMoveFunction = (move) => {
   if (!roomDetails.value || !UUID.value) return;
-  const hasPlate = args.plate?.color != null;
-  const hasMiddle = args.middle != null;
-  if (args.row == null || hasPlate === hasMiddle) return;
+  if (!roomDetails.value.settings.canOmit.top && !move.top)
+    return addNotif("Cannot omit top text", "ERROR");
+  if (!roomDetails.value.settings.canOmit.bottom && !move.bottom)
+    return addNotif("Cannot omit bottom text", "ERROR");
   const msg: MakeMoveMessage = {
     type: MessageType.MAKE_MOVE,
     roomID: roomDetails.value.roomID,
     userID: UUID.value,
-    row: args.row,
-    plate: hasPlate ? (args.plate as MakeMoveMessage["plate"]) : undefined,
-    middle: args.middle,
+    move,
   };
   ws.send(JSON.stringify(msg));
-}; */
+};
 
 const onEndStandings = () => {
   if (!roomDetails.value || !UUID.value) return;
@@ -217,7 +217,8 @@ const onEndStandings = () => {
       settings: roomDetails.settings,
       hand,
       username,
-      // onMakeMove,
+      onMakeMove,
+      moveState,
     }"
   />
   <div class="fixed bottom-4 right-4">
@@ -247,6 +248,10 @@ body {
 }
 
 .btn {
-  @apply border-2 cursor-pointer hover:underline transition hover:-translate-y-2 hover:shadow border-gray-800 dark:border-gray-200;
+  @apply border-2 cursor-pointer hover:underline transition hover:-translate-y-2 hover:shadow bg-white dark:bg-gray-900 border-gray-800 dark:border-gray-200;
+}
+
+.disabled {
+  @apply text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-600 cursor-not-allowed;
 }
 </style>

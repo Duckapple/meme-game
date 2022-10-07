@@ -7,10 +7,13 @@ export type Card = { id: number };
 export type FullCard = Card & { text: string };
 export type Visual = { id: number; filename: string };
 
-export type Move = {
+export type AnonymousMove = {
+  top?: FullCard;
+  bottom?: FullCard;
+};
+
+export type Move = AnonymousMove & {
   player: string;
-  top: FullCard;
-  bottom: FullCard;
 };
 
 export type RoomDetails = {
@@ -24,6 +27,7 @@ export type RoomDetails = {
 export interface GameSettings {
   handSize: number;
   discardsPerRound: number;
+  canOmit: Record<"top" | "bottom", boolean>;
 }
 
 export interface GameState {
@@ -31,7 +35,11 @@ export interface GameState {
   currentTzar: number;
   tzarsTurn: boolean;
   plays: (Move | Hidden | null)[];
-  yourPlay: Move | null;
+}
+
+export interface MoveState {
+  top?: Card["id"];
+  bottom?: Card["id"];
 }
 
 export type Tuple<T, N extends number> = number extends N

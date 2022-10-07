@@ -4,6 +4,7 @@ import {
   GameSettings,
   GameState,
   Move,
+  MoveState,
   RoomDetails,
   Visual,
 } from ".";
@@ -73,7 +74,7 @@ export type MakeMoveMessage = {
   type: MessageType.MAKE_MOVE;
   roomID: string;
   userID: UUID;
-  move: Omit<Move, "player">;
+  move: Partial<Omit<Move, "player">>;
 };
 export type PickWinnerMessage = {
   type: MessageType.PICK_WINNER;
@@ -118,6 +119,7 @@ export type UpdateRoomResponse = Partial<Omit<RoomDetails, "roomID">> & {
   type: MessageType.UPDATE_ROOM;
   update: string;
   newCards?: Record<"top" | "bottom", FullCard[]>;
+  moveState?: MoveState;
 };
 export type AssignUUIDResponse = {
   type: MessageType.ASSIGN_UUID;
