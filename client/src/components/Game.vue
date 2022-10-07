@@ -46,7 +46,7 @@ const hasLoaded = ref(false);
 
 const canvas = ref<HTMLCanvasElement>();
 async function redraw() {
-  let promise: Promise<HTMLImageElement | undefined>;
+  let promise: Promise<HTMLImageElement | any | undefined>;
   if (visualUrl.value && visual.value.url !== visualUrl.value) {
     const url = visualUrl.value;
     promise = new Promise((res) => {
