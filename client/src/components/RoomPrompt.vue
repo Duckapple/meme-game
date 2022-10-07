@@ -32,7 +32,7 @@ const roomcodeError = ref<boolean>(false);
       }"
       placeholder="Enter username..."
       :text="username"
-      :onInput="(v) => (username = v)"
+      :onInput="(v) => typeof v === 'string' && (username = v)"
       :name="username"
     />
     <div class="flex items-end justify-center space-x-16 text-2xl">
@@ -58,7 +58,7 @@ const roomcodeError = ref<boolean>(false);
           placeholder="Enter Room Code..."
           :maxlength="10"
           :text="roomCode"
-          :onInput="(v) => (roomCode = v)"
+          :onInput="(v) => typeof v === 'string' && (roomCode = v)"
           :password="obscured"
           :class="{
             'outline outline-2 outline-red-500': roomcodeError && !roomCode,
