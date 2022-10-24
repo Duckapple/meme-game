@@ -29,6 +29,7 @@ watch(username, (username) => {
   localStorage.setItem("meme_game_username", username);
 });
 
+// TODO: Fix the fact that sessions are window-specific and not tab-specific...
 export const UUID = ref<string>(sessionStorage.getItem("meme_game_UUID") ?? "");
 watch(UUID, (UUID) => {
   sessionStorage.setItem("meme_game_UUID", UUID);

@@ -1,6 +1,13 @@
 import lodash from "lodash";
 const { pick, shuffle } = lodash;
-import type { GameSettings, GameState, Hidden, Move, Visual } from "./model";
+import {
+  GameSettings,
+  GameState,
+  GameStyle,
+  Hidden,
+  Move,
+  Visual,
+} from "./model";
 import { InternalGameState } from "./state";
 import { refresh, toptexts, bottomtexts, visuals } from "./api";
 
@@ -12,6 +19,7 @@ export function createSettings(): GameSettings {
       bottom: false,
       top: false,
     },
+    gameStyle: GameStyle.VOTE,
   };
 }
 
@@ -25,8 +33,20 @@ export async function createInternalGameState(
     bottom: shuffle(bottomtexts),
     visuals: shuffle(visuals),
   };
+
+  let currentTzar: number;
+  switch (settings.gameStyle) {
+    case GameStyle.TZAR:
+      currentTzar = 0;
+      break;
+    case GameStyle.VOTE:
+    default:
+      currentTzar = -1;
+      break;
+  }
+
   return {
-    currentTzar: 0,
+    currentTzar,
     plays: players.map(() => null),
     tzarsTurn: false,
     hands: players.map(() => ({

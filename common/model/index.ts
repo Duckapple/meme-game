@@ -28,6 +28,7 @@ export interface GameSettings {
   handSize: number;
   discardsPerRound: number;
   canOmit: Record<"top" | "bottom", boolean>;
+  gameStyle: GameStyle;
 }
 
 export interface GameState {
@@ -40,6 +41,11 @@ export interface GameState {
 export interface MoveState {
   top?: Card["id"];
   bottom?: Card["id"];
+}
+
+export enum GameStyle {
+  VOTE = "VOTE",
+  TZAR = "TZAR",
 }
 
 export type Tuple<T, N extends number> = number extends N

@@ -254,4 +254,8 @@ body {
 .disabled {
   @apply text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-600 cursor-not-allowed;
 }
+
+.btn.disabled {
+  @apply hover:translate-y-0 hover:shadow-none hover:no-underline cursor-not-allowed;
+}
 </style>

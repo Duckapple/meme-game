@@ -188,7 +188,9 @@ watch(
             !(isTzar || moveState) && incomingMove && onMakeMove(incomingMove)
         "
       >
-        <span class="block px-8 py-4 cursor-pointer">Make Move</span>
+        <span class="block px-8 py-4">{{
+          isTzar ? "You're the Tzar!" : "Make Move"
+        }}</span>
       </button>
     </div>
     <div class="flex flex-col w-0 h-0 m-8 scale-50"></div>

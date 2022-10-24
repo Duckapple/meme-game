@@ -21,6 +21,7 @@ import {
   LookupMessage,
   LookupResponse,
   Move,
+  GameStyle,
 } from "./model";
 import {
   convertGameState,
@@ -263,8 +264,10 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 
   cleanup.forEach((f) => f());
 
+  const noMovePlayerCount = state.plays.filter((v) => v == null).length;
+  let switchCount = room.settings.gameStyle === GameStyle.TZAR ? 1 : 0;
   // If only one player (the tzar) hasn't played, then progress
-  if (state.plays.filter((v) => v == null).length <= 1) {
+  if (noMovePlayerCount <= switchCount) {
     state.tzarsTurn = true;
   }
 
