@@ -8,6 +8,7 @@ import {
   Move,
   Visual,
 } from "./model";
+import log from "./log";
 
 export type Player = {
   socket: WebSocket;
@@ -43,6 +44,21 @@ export const rooms: Map<string, Room> = new Map();
 
 export function createRoomID(): string {
   return randomInt(100000, 999999).toString();
+}
+
+/**
+ * Check if player is in room with given ID, returning the {@link Player} data if in progress, `false` otherwise.
+ */
+export function isGameInProgress(
+  userID: string,
+  roomID?: string | null
+): false | number {
+  if (!roomID) return false;
+  const room = rooms.get(roomID);
+  if (!room) return false;
+  const playerID = room.players.findIndex(({ UUID }) => UUID === userID);
+  if (playerID === -1) return false;
+  return playerID;
 }
 
 export function createUUID(): string {

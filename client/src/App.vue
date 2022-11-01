@@ -16,6 +16,7 @@ import {
   AssignUUIDMessage,
   Move,
   MoveState,
+  CardUpdate,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -47,6 +48,17 @@ const addNotif = (message: string, isError?: typeof ERROR) => {
   }, 10000);
 };
 
+function handleCardUpdate(cardUpdate?: CardUpdate) {
+  if (cardUpdate) {
+    if (!hand.value || cardUpdate.type === "replace")
+      hand.value = omit(cardUpdate, "type");
+    else {
+      hand.value.bottom.push(...cardUpdate.bottom);
+      hand.value.top.push(...cardUpdate.top);
+    }
+  }
+}
+
 ws.addEventListener("message", (evt) => {
   let m: MessageResponse;
   try {
@@ -65,6 +77,10 @@ ws.addEventListener("message", (evt) => {
   } else if (m.type === MessageType.JOIN_ROOM) {
     location.hash = `#${m.roomID}`;
     roomDetails.value = omit(m, "type");
+  } else if (m.type === MessageType.REJOIN_ROOM) {
+    location.hash = `#${m.roomID}`;
+    roomDetails.value = omit(m, "type");
+    handleCardUpdate(m.cardUpdate);
   } else if (m.type === MessageType.UPDATE_ROOM) {
     if (!roomDetails.value) {
       addNotif("Got update for non-existing room details!");
@@ -78,13 +94,7 @@ ws.addEventListener("message", (evt) => {
         },
       };
     }
-    if (m.newCards) {
-      if (!hand.value) hand.value = m.newCards;
-      else {
-        hand.value.bottom.push(...m.newCards.bottom);
-        hand.value.top.push(...m.newCards.top);
-      }
-    }
+    handleCardUpdate(m.cardUpdate);
     if (m.moveState) {
       moveState.value = m.moveState;
     }
@@ -109,9 +119,15 @@ ws.addEventListener("message", (evt) => {
 
 ws.addEventListener("open", () => {
   addNotif("Connected to server");
+  let roomID: string | undefined = undefined;
+  const roomFromHash = location.hash.match("#(\\d{6})")?.[1];
+  if (roomFromHash) {
+    roomID = roomFromHash;
+  }
   const msg: AssignUUIDMessage = {
     type: MessageType.ASSIGN_UUID,
     userID: UUID.value,
+    roomID,
   };
   ws.send(JSON.stringify(msg));
 });

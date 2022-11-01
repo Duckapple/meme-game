@@ -1,5 +1,6 @@
 import {
   Card,
+  CardUpdate,
   FullCard,
   GameSettings,
   GameState,
@@ -23,6 +24,7 @@ export type Message =
 export enum MessageType {
   CREATE_ROOM = "CREATE_ROOM",
   JOIN_ROOM = "JOIN_ROOM",
+  REJOIN_ROOM = "REJOIN_ROOM",
   REARRANGE_PLAYERS = "REARRANGE_PLAYERS",
   UPDATE_ROOM = "UPDATE_ROOM",
   UPDATE_SETTINGS = "UPDATE_SETTINGS",
@@ -40,6 +42,7 @@ type UUID = string;
 export type AssignUUIDMessage = {
   type: MessageType.ASSIGN_UUID;
   userID?: UUID | null;
+  roomID?: string | null;
 };
 export type CreateRoomMessage = {
   type: MessageType.CREATE_ROOM;
@@ -102,6 +105,7 @@ export type LookupMessage = {
 export type MessageResponse =
   | CreateRoomResponse
   | JoinRoomResponse
+  | ReJoinRoomResponse
   | UpdateRoomResponse
   | AssignUUIDResponse
   | EndGameResponse
@@ -115,10 +119,14 @@ export type CreateRoomResponse = RoomDetails & {
 export type JoinRoomResponse = RoomDetails & {
   type: MessageType.JOIN_ROOM;
 };
+export type ReJoinRoomResponse = RoomDetails & {
+  type: MessageType.REJOIN_ROOM;
+  cardUpdate?: CardUpdate;
+};
 export type UpdateRoomResponse = Partial<Omit<RoomDetails, "roomID">> & {
   type: MessageType.UPDATE_ROOM;
   update: string;
-  newCards?: Record<"top" | "bottom", FullCard[]>;
+  cardUpdate?: CardUpdate;
   moveState?: MoveState;
 };
 export type AssignUUIDResponse = {

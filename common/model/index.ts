@@ -38,6 +38,12 @@ export interface GameState {
   plays: (Move | Hidden | null)[];
 }
 
+export interface CardUpdate {
+  top: FullCard[];
+  bottom: FullCard[];
+  type: "add" | "replace";
+}
+
 export interface MoveState {
   top?: Card["id"];
   bottom?: Card["id"];

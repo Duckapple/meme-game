@@ -7,6 +7,7 @@ import {
   CreateRoomResponse,
   UpdateRoomResponse,
   JoinRoomResponse,
+  ReJoinRoomResponse,
   ErrorResponse,
   CreateRoomMessage,
   JoinRoomMessage,
@@ -28,7 +29,14 @@ import {
   createInternalGameState,
   createSettings,
 } from "./create";
-import { rooms, Player, createRoomID, createUUID, Room } from "./state";
+import {
+  rooms,
+  Player,
+  createRoomID,
+  createUUID,
+  Room,
+  isGameInProgress,
+} from "./state";
 import log from "./log";
 import { exit } from "process";
 import { bottomtexts, toptexts, visuals } from "./api";
@@ -194,7 +202,10 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   room.players.forEach(({ socket }, i) => {
     const playerUpdate: UpdateRoomResponse = {
       ...update,
-      newCards: room.state?.hands[i],
+      cardUpdate: room.state?.hands[i] && {
+        ...room.state?.hands[i],
+        type: "replace",
+      },
     };
     socket.send(JSON.stringify(playerUpdate));
   });
@@ -408,6 +419,32 @@ function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
     userID = createUUID();
     log(`New connection, gave ID ${userID}`);
   } else {
+    const playerID = isGameInProgress(userID, m.roomID);
+    const room = rooms.get(m.roomID as string);
+    if (playerID && room) {
+      const player = room.players[playerID];
+      player.socket = ws;
+      log("Player is rejoining...");
+      setTimeout(() => {
+        let cardUpdate: ReJoinRoomResponse["cardUpdate"];
+        if (room.state?.hands) {
+          cardUpdate = {
+            ...room.state.hands[playerID],
+            type: "replace",
+          };
+        }
+        const update: ReJoinRoomResponse = {
+          type: MessageType.REJOIN_ROOM,
+          players: room.players.map(({ name }) => name),
+          creator: room.creator.name,
+          settings: room.settings,
+          state: room.state,
+          roomID: m.roomID as string,
+          cardUpdate,
+        };
+        ws.send(JSON.stringify(update));
+      }, 200);
+    }
     log(`New connection, recieved ID ${userID}`);
   }
   const greeting: AssignUUIDResponse = {
