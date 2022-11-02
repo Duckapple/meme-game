@@ -1,5 +1,17 @@
 <script lang="ts" setup>
+import { computed } from "vue";
 import { GameSettings } from "../model";
+
+const legibleOptions: Record<GameSettings["winCondition"]["type"], string> = {
+  points: "First to",
+  rounds: "Best of",
+};
+
+const parse = (e: Event): number | null => {
+  const val = Number((e.target as HTMLInputElement).value);
+  if (isNaN(val)) return null;
+  return val;
+};
 
 const props = defineProps<{
   settings: GameSettings;
@@ -8,9 +20,18 @@ const props = defineProps<{
 }>();
 
 const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
-  const val = Number((e.target as HTMLInputElement).value);
-  if (!isNaN(val)) props.settings[key] = val;
+  const val = parse(e);
+  if (val) props.settings[key] = val;
 };
+
+const textForOmitOptions = computed(() => {
+  const top = props.settings.canOmit.top;
+  const bottom = props.settings.canOmit.bottom;
+  if (top && bottom) return "Can omit any text";
+  if (top) return "Can only omit top text";
+  if (bottom) return "Can only omit bottom text";
+  return "Cannot omit text";
+});
 </script>
 
 <template>
@@ -69,7 +90,7 @@ const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
       </td>
     </tr> -->
   </table>
-  <div class="flex items-center pt-4">
+  <div class="flex items-center pt-4" v-if="isCreator">
     <label for="toptext">Can omit top text?</label>
     <input
       type="checkbox"
@@ -78,7 +99,7 @@ const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
       v-model="settings.canOmit.top"
     />
   </div>
-  <div class="flex items-center pt-2">
+  <div class="flex items-center pt-2" v-if="isCreator">
     <label for="bottomtext">Can omit bottom text?</label>
     <input
       type="checkbox"
@@ -86,6 +107,40 @@ const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
       id="bottomtext"
       v-model="settings.canOmit.bottom"
     />
+  </div>
+  <div v-if="!isCreator">
+    <span>{{ textForOmitOptions }}</span>
+  </div>
+  <div>
+    <label>Win condition: </label>
+
+    <select
+      v-if="isCreator"
+      v-model="settings.winCondition.type"
+      class="px-2 py-1 mr-2 bg-transparent border-2 dark:border-white"
+    >
+      <option value="points">{{ legibleOptions["points"] }}</option>
+      <option value="rounds">{{ legibleOptions["rounds"] }}</option>
+    </select>
+    <span v-if="!isCreator">{{
+      legibleOptions[settings.winCondition.type]
+    }}</span>
+
+    <input
+      v-if="isCreator"
+      name="win-n"
+      id="win-n"
+      @input="
+        (e) => {
+          if (parse(e))
+            settings.winCondition.n = parse(e) as number;
+        }
+      "
+      :value="settings.winCondition.n"
+    />
+    <span v-if="!isCreator">&nbsp;{{ settings.winCondition.n }}</span>
+
+    {{ settings.winCondition.type }}
   </div>
 </template>
 

@@ -29,6 +29,10 @@ export interface GameSettings {
   discardsPerRound: number;
   canOmit: Record<"top" | "bottom", boolean>;
   gameStyle: GameStyle;
+  winCondition: {
+    n: number;
+    type: "rounds" | "points";
+  };
 }
 
 export interface GameState {
@@ -36,6 +40,7 @@ export interface GameState {
   currentTzar: number;
   tzarsTurn: boolean;
   plays: (Move | Hidden | null)[];
+  points: number[];
 }
 
 export interface CardUpdate {

@@ -20,6 +20,10 @@ export function createSettings(): GameSettings {
       top: false,
     },
     gameStyle: GameStyle.VOTE,
+    winCondition: {
+      n: 3,
+      type: "points",
+    },
   };
 }
 
@@ -55,10 +59,9 @@ export async function createInternalGameState(
     })),
     visual: piles.visuals.splice(0, 1)[0].filename,
     piles,
+    points: players.map(() => 0),
   };
 }
-
-function convertHand(move: Move) {}
 
 export function convertGameState(state: InternalGameState): GameState {
   const plays = state.plays.map((play) =>
@@ -66,6 +69,6 @@ export function convertGameState(state: InternalGameState): GameState {
   );
   return {
     plays,
-    ...pick(state, ["currentTzar", "tzarsTurn", "visual"]),
+    ...pick(state, ["currentTzar", "tzarsTurn", "visual", "points"]),
   };
 }

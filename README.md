@@ -11,7 +11,7 @@ This project is a game which uses his meme generator API to make a "put the best
   - [x] Retain Aspect
   - [ ] Stretchyyyyyy
 - [ ] UI for pick-a-card
-  - [ ] Desktop
+  - [x] Desktop
   - [ ] Mobile
 - [ ] UI for going through submissions
   - [ ] Spectator/hub view
@@ -40,4 +40,3 @@ yarn dev
 ```
 
 Deployment involves building each project via their respective `yarn build` commands
-
