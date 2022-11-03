@@ -28,6 +28,7 @@ import {
   convertGameState,
   createInternalGameState,
   createSettings,
+  setTzar,
 } from "./create";
 import {
   rooms,
@@ -40,6 +41,7 @@ import {
 import log from "./log";
 import { exit } from "process";
 import { bottomtexts, toptexts, visuals } from "./api";
+import _ from "lodash";
 const { app } = expressWs(express());
 const port = process.env.PORT || 8080;
 
@@ -131,15 +133,17 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
     settings: room.settings,
   };
   ws.send(JSON.stringify(joinRes));
-  const update: UpdateRoomResponse = {
-    type: MessageType.UPDATE_ROOM,
-    players: room.players.map(({ name }) => name),
-    update: `User ${m.username} joined the room`,
-  };
-  otherPlayers.forEach((otherPlayer) =>
-    otherPlayer.send(JSON.stringify(update))
-  );
-  log(`Joined room ${m.roomID}`);
+  if (!existing) {
+    const update: UpdateRoomResponse = {
+      type: MessageType.UPDATE_ROOM,
+      players: room.players.map(({ name }) => name),
+      update: `User ${m.username} joined the room`,
+    };
+    otherPlayers.forEach((otherPlayer) =>
+      otherPlayer.send(JSON.stringify(update))
+    );
+  }
+  log(`Joined room ${m.roomID}${existing ? ", not update" : ""}`);
 }
 function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
   const room = rooms.get(m.roomID);
@@ -189,10 +193,11 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   if (!m.userID || room.creator.UUID !== m.userID)
     return ws.send(createError("Invalid user ID"));
 
-  room.state = await createInternalGameState(
+  const state = await createInternalGameState(
     room.players.map(({ name }) => name),
     room.settings
   );
+  room.state = state;
   const update: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
     state: convertGameState(room.state),
@@ -210,6 +215,12 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
     socket.send(JSON.stringify(playerUpdate));
   });
   log(`Began game in room ${m.roomID}`);
+  setTimeout(() => {
+    setTzar(state);
+    update.state = convertGameState(state);
+    update.update = "Time is up! Moving on to voting.";
+    room.players.forEach(({ socket }) => socket.send(JSON.stringify(update)));
+  }, room.settings.maxTimer.move + 1000);
 }
 
 function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
@@ -279,7 +290,7 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   let switchCount = room.settings.gameStyle === GameStyle.TZAR ? 1 : 0;
   // If only one player (the tzar) hasn't played, then progress
   if (noMovePlayerCount <= switchCount) {
-    state.tzarsTurn = true;
+    setTzar(state);
   }
 
   const msg: UpdateRoomResponse = {
@@ -325,7 +336,7 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 //     playerName,
 //   }));
 
-//   room.state = endRound(room.state, room.settings);
+//   endRound(room.state, room.settings);
 
 //   points.forEach((point, i) => {
 //     point.score += room.state?.playerBoards[i].score ?? -point.score;

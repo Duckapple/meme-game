@@ -33,6 +33,7 @@ export interface GameSettings {
     n: number;
     type: "rounds" | "points";
   };
+  maxTimer: Record<"move" | "pick", number>;
 }
 
 export interface GameState {
@@ -41,6 +42,7 @@ export interface GameState {
   tzarsTurn: boolean;
   plays: (Move | Hidden | null)[];
   points: number[];
+  timerEnd: number;
 }
 
 export interface CardUpdate {

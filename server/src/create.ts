@@ -10,6 +10,8 @@ import {
 } from "./model";
 import { InternalGameState } from "./state";
 import { refresh, toptexts, bottomtexts, visuals } from "./api";
+import _ from "lodash";
+import log from "./log";
 
 export function createSettings(): GameSettings {
   return {
@@ -23,6 +25,10 @@ export function createSettings(): GameSettings {
     winCondition: {
       n: 3,
       type: "points",
+    },
+    maxTimer: {
+      move: 45000,
+      pick: 60000,
     },
   };
 }
@@ -52,6 +58,7 @@ export async function createInternalGameState(
   return {
     currentTzar,
     plays: players.map(() => null),
+    shuffle: players.map((_, i) => i + 1),
     tzarsTurn: false,
     hands: players.map(() => ({
       top: piles.top.splice(0, settings.handSize),
@@ -60,15 +67,38 @@ export async function createInternalGameState(
     visual: piles.visuals.splice(0, 1)[0].filename,
     piles,
     points: players.map(() => 0),
+    timerEnd: Math.round(
+      (new Date().getTime() + settings.maxTimer.move) / 1000 + 1
+    ),
   };
 }
 
 export function convertGameState(state: InternalGameState): GameState {
   const plays = state.plays.map((play) =>
-    state.tzarsTurn ? play : play ? ("HIDDEN" as Hidden) : null
+    play
+      ? state.tzarsTurn
+        ? { ...play, player: "" }
+        : ("HIDDEN" as Hidden)
+      : null
   );
   return {
     plays,
-    ...pick(state, ["currentTzar", "tzarsTurn", "visual", "points"]),
+    ...pick(state, [
+      "currentTzar",
+      "tzarsTurn",
+      "visual",
+      "points",
+      "timerEnd",
+    ]),
   };
+}
+
+export function setTzar(state: InternalGameState): void {
+  state.tzarsTurn = true;
+  const shuffle = _.shuffle<[Move | null, number]>(
+    state.plays.map((play, i) => [play, i + 1])
+  );
+  state.plays = shuffle.map(([play]) => play);
+  state.shuffle = shuffle.map(([, num]) => num);
+  log(`Shuffle is ${JSON.stringify(state.shuffle)}`);
 }

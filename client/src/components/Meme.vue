@@ -96,7 +96,7 @@ watch([canvas, () => props.bottom, () => props.top, hasLoaded], () => redraw());
 <template>
   <canvas
     ref="canvas"
-    class="font-[Impacto] max-w-[48rem] max-h-[48rem]"
+    class="font-[Impacto] aspect-square max-h-full max-w-full block"
     :height="CANVAS_SIZE"
     :width="CANVAS_SIZE"
   >

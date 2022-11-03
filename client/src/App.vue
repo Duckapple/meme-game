@@ -132,9 +132,9 @@ ws.addEventListener("open", () => {
   ws.send(JSON.stringify(msg));
 });
 ws.addEventListener("close", (ev) => {
-  addNotif("Disconnected from server");
-  roomDetails.value = undefined;
-  location.hash = "";
+  addNotif("Disconnected from server...");
+  // roomDetails.value = undefined;
+  // location.hash = "";
 });
 
 const onJoin = (userName: string, roomID: string) => {
@@ -273,5 +273,10 @@ body {
 
 .btn.disabled {
   @apply hover:translate-y-0 hover:shadow-none hover:no-underline cursor-not-allowed;
+}
+
+.text-shadow {
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+    1px 1px 0 #000;
 }
 </style>

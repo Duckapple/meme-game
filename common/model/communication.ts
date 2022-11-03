@@ -19,7 +19,8 @@ export type Message =
   | PickWinnerMessage
   | UpdateSettingsMessage
   | EndStandingsMessage
-  | LookupMessage;
+  | LookupMessage
+  | VoteMessage;
 
 export enum MessageType {
   CREATE_ROOM = "CREATE_ROOM",
@@ -36,6 +37,7 @@ export enum MessageType {
   END_GAME = "END_GAME",
   END_STANDINGS = "END_STANDINGS",
   LOOKUP = "LOOKUP",
+  VOTE = "VOTE",
 }
 
 type UUID = string;
@@ -101,6 +103,11 @@ export type LookupMessage = {
       data: Partial<Visual>;
     }
 );
+export type VoteMessage = {
+  type: MessageType.VOTE;
+  playIndex: number;
+  voteState: boolean;
+};
 
 export type MessageResponse =
   | CreateRoomResponse
