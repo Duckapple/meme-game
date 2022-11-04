@@ -20,6 +20,7 @@ export interface InternalGameState extends GameState {
   plays: (Move | null)[]; // 'Hidden' is just a Move in the !tzarsTurn phase
   shuffle: number[];
   hands: Record<"top" | "bottom", FullCard[]>[];
+  timeout?: NodeJS.Timeout;
   piles: {
     top: FullCard[];
     bottom: FullCard[];

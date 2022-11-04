@@ -41,6 +41,7 @@ export enum MessageType {
 }
 
 type UUID = string;
+export type UserAndRoom = { userID: UUID; roomID: string };
 export type AssignUUIDMessage = {
   type: MessageType.ASSIGN_UUID;
   userID?: UUID | null;
@@ -52,44 +53,30 @@ export type CreateRoomMessage = {
   username: string;
   roomID?: string;
 };
-export type JoinRoomMessage = {
+export type JoinRoomMessage = UserAndRoom & {
   type: MessageType.JOIN_ROOM;
-  userID: UUID;
   username: string;
-  roomID: string;
 };
-export type UpdateSettingsMessage = {
+export type UpdateSettingsMessage = UserAndRoom & {
   type: MessageType.UPDATE_SETTINGS;
-  userID: UUID;
-  roomID: string;
   settings: GameSettings;
 };
-export type RearrangePlayersMessage = {
+export type RearrangePlayersMessage = UserAndRoom & {
   type: MessageType.REARRANGE_PLAYERS;
-  userID: UUID;
-  roomID: string;
   players: string[];
 };
-export type BeginMessage = {
+export type BeginMessage = UserAndRoom & {
   type: MessageType.BEGIN;
-  roomID: string;
-  userID: UUID;
 };
-export type MakeMoveMessage = {
+export type MakeMoveMessage = UserAndRoom & {
   type: MessageType.MAKE_MOVE;
-  roomID: string;
-  userID: UUID;
   move: Partial<Omit<Move, "player">>;
 };
-export type PickWinnerMessage = {
+export type PickWinnerMessage = UserAndRoom & {
   type: MessageType.PICK_WINNER;
-  roomID: string;
-  userID: UUID;
 };
-export type EndStandingsMessage = {
+export type EndStandingsMessage = UserAndRoom & {
   type: MessageType.END_STANDINGS;
-  roomID: string;
-  userID: UUID;
 };
 export type LookupMessage = {
   type: MessageType.LOOKUP;
@@ -103,7 +90,7 @@ export type LookupMessage = {
       data: Partial<Visual>;
     }
 );
-export type VoteMessage = {
+export type VoteMessage = UserAndRoom & {
   type: MessageType.VOTE;
   playIndex: number;
   voteState: boolean;
@@ -134,7 +121,7 @@ export type UpdateRoomResponse = Partial<Omit<RoomDetails, "roomID">> & {
   type: MessageType.UPDATE_ROOM;
   update: string;
   cardUpdate?: CardUpdate;
-  moveState?: MoveState;
+  moveState?: MoveState | null;
 };
 export type AssignUUIDResponse = {
   type: MessageType.ASSIGN_UUID;

@@ -34,7 +34,7 @@ const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
   top: [],
   bottom: [],
 });
-const moveState = ref<MoveState>();
+const moveState = ref<MoveState | null>();
 const standings = ref<string[]>();
 
 const ERROR = "ERROR";

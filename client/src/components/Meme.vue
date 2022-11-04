@@ -90,7 +90,9 @@ async function redraw() {
     );
   }
 }
-watch([canvas, () => props.bottom, () => props.top, hasLoaded], () => redraw());
+watch([canvas, visual, () => props.bottom, () => props.top, hasLoaded], () =>
+  redraw()
+);
 </script>
 
 <template>

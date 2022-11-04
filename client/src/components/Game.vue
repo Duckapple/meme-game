@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, VNodeRef } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { MakeMoveFunction } from "../App.vue";
 import Meme from "./Meme.vue";
 import type {
@@ -32,7 +32,7 @@ const props = defineProps<{
   creator: string;
   settings: GameSettings;
   onMakeMove: MakeMoveFunction;
-  moveState?: MoveState;
+  moveState?: MoveState | null;
 }>();
 
 const likeState = ref(props.players.map(() => false));
@@ -59,6 +59,10 @@ const makeLike = (i: number) => {
 };
 
 const incomingMove = ref<Partial<Move>>({ player: props.username });
+
+watch(props, (p) => {
+  if (p.moveState === null) incomingMove.value = { player: p.username };
+});
 
 const currentCard = ref(0);
 

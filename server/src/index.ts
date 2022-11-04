@@ -23,12 +23,15 @@ import {
   LookupResponse,
   Move,
   GameStyle,
+  VoteMessage,
+  UserAndRoom,
 } from "./model";
 import {
   convertGameState,
   createInternalGameState,
   createSettings,
   setTzar,
+  stopTimeout,
 } from "./create";
 import {
   rooms,
@@ -42,6 +45,7 @@ import log from "./log";
 import { exit } from "process";
 import { bottomtexts, toptexts, visuals } from "./api";
 import _ from "lodash";
+import { sendOnSocket } from "./utils";
 const { app } = expressWs(express());
 const port = process.env.PORT || 8080;
 
@@ -65,6 +69,32 @@ export function createError(error: string): string {
   };
   log(`Encountered error '${error}'`);
   return JSON.stringify(err);
+}
+
+type PlayerAndRoom = {
+  player: Player;
+  playerIndex: number;
+  room: Room;
+};
+/** This ensures that room and player are defined, sending errors if not */
+function ensureUserAndRoom(
+  ws: WS.WebSocket,
+  m: UserAndRoom
+): false | PlayerAndRoom {
+  const room = rooms.get(m.roomID);
+
+  if (!m.roomID || !rooms.has(m.roomID) || !room)
+    return void ws.send(createError("Incorrect room ID")), false;
+
+  const playerIndex = room.players.findIndex(({ UUID }) => m.userID === UUID);
+  if (playerIndex === -1)
+    return void ws.send(createError("Invalid user ID")), false;
+
+  return {
+    room,
+    playerIndex,
+    player: room.players[playerIndex],
+  };
 }
 
 function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
@@ -106,14 +136,18 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
   if (!m.roomID || !rooms.has(m.roomID) || !room)
     return ws.send(createError("Incorrect room ID"));
 
-  const existing = room.players.find((player) => player.name === m.username);
+  const existingIndex = room.players.findIndex(
+    (player) => player.name === m.username
+  );
+  const existing =
+    existingIndex === -1 ? undefined : room.players[existingIndex];
   if (existing) {
     const closedStates: (0 | 1 | 2 | 3)[] = [WS.CLOSING, WS.CLOSED];
     // If connection was closed, allow hijacking
     if (closedStates.includes(existing.socket.readyState)) existing.socket = ws;
     else return ws.send(createError("User already in room"));
-  } else if (room.players.length >= 4) {
-    return ws.send(createError("Room full"));
+    // } else if (room.players.length >= 4) {
+    //   return ws.send(createError("Room full"));
   } else if (room.state) {
     return ws.send(createError("Game already in progress"));
   }
@@ -132,8 +166,15 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
     state: room.state && convertGameState(room.state),
     settings: room.settings,
   };
-  ws.send(JSON.stringify(joinRes));
-  if (!existing) {
+
+  if (existing && room.state) {
+    sendOnSocket(ws, {
+      ...joinRes,
+      type: MessageType.REJOIN_ROOM,
+      cardUpdate: { type: "replace", ...room.state.hands[existingIndex] },
+    });
+  } else {
+    ws.send(JSON.stringify(joinRes));
     const update: UpdateRoomResponse = {
       type: MessageType.UPDATE_ROOM,
       players: room.players.map(({ name }) => name),
@@ -215,8 +256,9 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
     socket.send(JSON.stringify(playerUpdate));
   });
   log(`Began game in room ${m.roomID}`);
-  setTimeout(() => {
-    setTzar(state);
+  stopTimeout(state);
+  state.timeout = setTimeout(() => {
+    setTzar(state, room.settings, room.players);
     update.state = convertGameState(state);
     update.update = "Time is up! Moving on to voting.";
     room.players.forEach(({ socket }) => socket.send(JSON.stringify(update)));
@@ -227,16 +269,10 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   // Cleanup allows us to only mutate state once we are sure the operation can be done
   const cleanup: (() => void)[] = [];
 
-  const room = rooms.get(m.roomID);
+  const res = ensureUserAndRoom(ws, m);
+  if (!res) return;
 
-  if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
-
-  const playerIndex = room.players.findIndex(
-    (player) => player.UUID === m.userID
-  );
-
-  if (playerIndex === -1) return ws.send(createError("Invalid user ID"));
+  const { room, playerIndex, player } = res;
 
   const state = room.state;
   if (!state) return ws.send(createError("Game not in progress"));
@@ -288,15 +324,16 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 
   const noMovePlayerCount = state.plays.filter((v) => v == null).length;
   let switchCount = room.settings.gameStyle === GameStyle.TZAR ? 1 : 0;
-  // If only one player (the tzar) hasn't played, then progress
+  // If only one player (the tzar) or none (vote) hasn't played, then progress
   if (noMovePlayerCount <= switchCount) {
-    setTzar(state);
+    stopTimeout(state);
+    setTzar(state, room.settings, room.players);
   }
 
   const msg: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
     state: convertGameState(state),
-    update: `${room.players[playerIndex].name} made a move`,
+    update: `${player.name} made a move`,
   };
 
   const response: UpdateRoomResponse = {
@@ -326,6 +363,10 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   //   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
   //   // setTimeout(() => handleEndOfRound(room), 3000);
   // }
+}
+
+function handleVote(ws: WS.WebSocket, m: VoteMessage) {
+  throw new Error("Function not implemented.");
 }
 
 // function handleEndOfRound(room: Room) {
@@ -449,7 +490,7 @@ function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
           players: room.players.map(({ name }) => name),
           creator: room.creator.name,
           settings: room.settings,
-          state: room.state,
+          state: room.state && convertGameState(room.state),
           roomID: m.roomID as string,
           cardUpdate,
         };
@@ -525,6 +566,8 @@ app.ws("/ws", (ws) => {
       handleEndStandings(ws, m);
     } else if (m.type === MessageType.LOOKUP) {
       handleLookup(ws, m);
+    } else if (m.type === MessageType.VOTE) {
+      handleVote(ws, m);
     } else {
       log(`Unknown message '${msg}'`);
     }
