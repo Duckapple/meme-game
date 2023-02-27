@@ -66,18 +66,20 @@ async function redraw() {
   ctx.strokeStyle = "black";
   ctx.lineWidth = CANVAS_SIZE / 200;
   const top = props.top;
+  const textMaxWidth =
+    props.imageMode === "scale" ? image.width * ratio : cvs.width;
   if (top) {
     ctx.strokeText(
       top.text.toUpperCase(),
       cvs.width / 2,
       (1.5 * CANVAS_SIZE) / 20,
-      image.width * ratio - CANVAS_SIZE / 20
+      textMaxWidth - CANVAS_SIZE / 20
     );
     ctx.fillText(
       top.text.toUpperCase(),
       cvs.width / 2,
       (1.5 * CANVAS_SIZE) / 20,
-      image.width * ratio - CANVAS_SIZE / 20
+      textMaxWidth - CANVAS_SIZE / 20
     );
   }
   const bottom = props.bottom;
