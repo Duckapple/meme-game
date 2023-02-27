@@ -555,7 +555,7 @@ app.ws("/ws", (ws) => {
     ws.ping(undefined, undefined, (error) => {
       error && clearInterval(timer);
     });
-  }, 30000);
+  }, 15000);
 
   ws.on("message", (msg) => {
     let m: Message;

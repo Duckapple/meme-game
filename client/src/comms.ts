@@ -15,9 +15,9 @@ export let ws = ref<WebSocket>(createWS());
 
 type SubType = Parameters<WebSocket["addEventListener"]>;
 
-export const subscriptions = reactive<SubType[]>([]);
+export const subscriptions = reactive<SubType[]>([["close", handleReconnect]]);
 
-function handleReconnect(ev: CloseEvent) {
+function handleReconnect() {
   ws.value = createWS();
   mountSubscriptions();
 }
@@ -27,5 +27,4 @@ export function mountSubscriptions() {
   for (const sub of subscriptions) {
     ws.value.addEventListener(...sub);
   }
-  ws.value.addEventListener("close", handleReconnect);
 }
