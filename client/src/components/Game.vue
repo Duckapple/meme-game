@@ -167,6 +167,7 @@ onUnmounted(() => {
         :bottom="incomingMove?.bottom"
         :top="incomingMove?.top"
         :visual="props.state.visual"
+        :image-mode="props.settings.imageMode"
         class="max-w-[48rem] max-h-[48rem]"
       />
     </div>
@@ -206,6 +207,7 @@ onUnmounted(() => {
             'saturate-50 blur': play.player === username,
           })
         "
+        :image-mode="props.settings.imageMode"
         :style="staticHeight && { height: staticHeight + 'px' } /* FML */"
         @dblclick="play.player !== username && makeLike(i)"
         @touchmove="(e) => touchSwipe(e)"
@@ -268,6 +270,7 @@ onUnmounted(() => {
         :bottom="move?.bottom"
         :top="move?.top"
         :visual="props.state.visual"
+        :image-mode="props.settings.imageMode"
       />
       <div class="flex justify-center">
         <span class="text-4xl"> {{ move?.player }} - {{ votes }} votes </span>

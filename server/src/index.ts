@@ -125,7 +125,7 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
     creator: m.username,
     settings,
   };
-  ws.send(JSON.stringify(res));
+  sendOnSocket(ws, res);
   log(`Created room ${roomID}`);
 }
 
@@ -174,15 +174,13 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
       cardUpdate: { type: "replace", ...room.state.hands[existingIndex] },
     });
   } else {
-    ws.send(JSON.stringify(joinRes));
+    sendOnSocket(ws, joinRes);
     const update: UpdateRoomResponse = {
       type: MessageType.UPDATE_ROOM,
       players: room.players.map(({ name }) => name),
       update: `User ${m.username} joined the room`,
     };
-    otherPlayers.forEach((otherPlayer) =>
-      otherPlayer.send(JSON.stringify(update))
-    );
+    otherPlayers.forEach((otherPlayer) => sendOnSocket(otherPlayer, update));
   }
   log(`Joined room ${m.roomID}${existing ? ", not update" : ""}`);
 }
@@ -221,7 +219,7 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
     players: reordered.map(({ name }) => name),
     update: "Rearranged players",
   };
-  reordered.forEach(({ socket }) => socket.send(JSON.stringify(update)));
+  reordered.forEach(({ socket }) => sendOnSocket(socket, update));
   log(`Rearranged players in room ${m.roomID}`);
 }
 
@@ -253,7 +251,7 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
         type: "replace",
       },
     };
-    socket.send(JSON.stringify(playerUpdate));
+    sendOnSocket(socket, playerUpdate);
   });
   log(`Began game in room ${m.roomID}`);
   stopTimeout(state);
@@ -349,7 +347,7 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 
   for (const { socket, UUID, name } of room.players) {
     if (m.userID === UUID) {
-      socket.send(JSON.stringify(response));
+      sendOnSocket(socket, response);
     } else {
       socket.send(
         JSON.stringify({ ...msg, state: convertGameState(state, name) })
@@ -357,14 +355,14 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
     }
   }
 
-  // room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  // room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 
   // if (isEndOfRound(room.state)) {
   //   const msg: UpdateRoomResponse = {
   //     type: MessageType.UPDATE_ROOM,
   //     update: "Round ended, calculating scores...",
   //   };
-  //   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  //   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
   //   // setTimeout(() => handleEndOfRound(room), 3000);
   // }
 }
@@ -416,7 +414,7 @@ function handleVote(ws: WS.WebSocket, m: VoteMessage) {
 //       .join(", "),
 //   };
 
-//   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+//   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 
 //   if (isEndOfGame(room.state)) {
 //     const msg: UpdateRoomResponse = {
@@ -427,7 +425,7 @@ function handleVote(ws: WS.WebSocket, m: VoteMessage) {
 //         currentPlayer: -1,
 //       },
 //     };
-//     room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+//     room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 //     setTimeout(() => {
 //       handleEndOfGame(room);
 //     }, 3000);
@@ -442,7 +440,7 @@ function handleVote(ws: WS.WebSocket, m: VoteMessage) {
 //     state,
 //     standings,
 //   };
-//   room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+//   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 // }
 
 function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
@@ -462,7 +460,7 @@ function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
     settings: room.settings,
   };
 
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 }
 
 function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
@@ -478,7 +476,7 @@ function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
     type: MessageType.END_STANDINGS,
   };
 
-  room.players.forEach(({ socket }) => socket.send(JSON.stringify(msg)));
+  room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
 
   rooms.delete(m.roomID);
 
@@ -514,7 +512,7 @@ function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
           roomID: m.roomID as string,
           cardUpdate,
         };
-        ws.send(JSON.stringify(update));
+        sendOnSocket(ws, update);
       }, 200);
     }
     log(`New connection, recieved ID ${userID}`);
@@ -524,7 +522,7 @@ function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
     userID,
     visual_cdn,
   };
-  ws.send(JSON.stringify(greeting));
+  sendOnSocket(ws, greeting);
 }
 
 function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
@@ -537,7 +535,7 @@ function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
           (m.data.filename && m.data.filename === filename) || m.data.id === id
       ),
     };
-    ws.send(JSON.stringify(res));
+    sendOnSocket(ws, res);
   } else {
     const cards = m.elementType === "bottom" ? bottomtexts : toptexts;
     const res: LookupResponse = {
@@ -548,7 +546,7 @@ function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
           (m.data.text && m.data.text === text) || m.data.id === id
       ),
     };
-    ws.send(JSON.stringify(res));
+    sendOnSocket(ws, res);
   }
 }
 

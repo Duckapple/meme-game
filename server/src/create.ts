@@ -35,6 +35,7 @@ export function createSettings(): GameSettings {
       standings: 15000,
     },
     pointCount: "votes",
+    imageMode: "stretch",
   };
 }
 

@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from "vue";
+import type { GameSettings } from "../model";
 import { visual_cdn } from "../state";
 const props = defineProps<{
   visual: string;
   top?: { text: string } | null;
   bottom?: { text: string } | null;
+  imageMode?: GameSettings["imageMode"];
 }>();
 
 const CANVAS_SIZE = 1000;
@@ -33,7 +35,7 @@ async function redraw() {
   } else {
     promise = Promise.resolve(visual.value.image);
   }
-  const image = await promise;
+  const image = (await promise) as HTMLImageElement;
   const cvs = canvas.value;
   const ctx = cvs?.getContext("2d");
   if (!cvs || !ctx || !image) return;
@@ -43,17 +45,21 @@ async function redraw() {
   const centerShift_x = (cvs.width - image.width * ratio) / 2;
   const centerShift_y = (cvs.height - image.height * ratio) / 2;
   ctx.clearRect(0, 0, cvs.width, cvs.height);
-  ctx.drawImage(
-    image,
-    0,
-    0,
-    image.width,
-    image.height,
-    centerShift_x,
-    centerShift_y,
-    image.width * ratio,
-    image.height * ratio
-  );
+  if (props.imageMode === "scale") {
+    ctx.drawImage(
+      image,
+      0,
+      0,
+      image.width,
+      image.height,
+      centerShift_x,
+      centerShift_y,
+      image.width * ratio,
+      image.height * ratio
+    );
+  } else {
+    ctx.drawImage(image, 0, 0, cvs.width, cvs.height);
+  }
   ctx.textAlign = "center";
   ctx.font = `${CANVAS_SIZE / 20}px Impacto`;
   ctx.fillStyle = "white";

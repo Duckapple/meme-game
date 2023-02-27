@@ -35,6 +35,7 @@ export interface GameSettings {
   };
   pointCount: "votes" | "best";
   maxTimer: Record<GameState["phase"], number>;
+  imageMode: "scale" | "stretch";
 }
 
 export interface GameState {
