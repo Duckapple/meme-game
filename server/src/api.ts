@@ -20,8 +20,10 @@ export async function refresh() {
   if (!lastRefresh || lastRefresh + 1000 * 60 < +new Date()) {
     lastRefresh = +new Date();
     log("Refreshing content...");
+    const toptextsText = await (await fetch(api + "/toptexts")).text();
+    log(toptextsText);
 
-    toptexts = JSON.parse(await (await fetch(api + "/toptexts")).text()).map(
+    toptexts = JSON.parse(toptextsText).map(
       (x: { id: number; memetext: string }) => ({ id: x.id, text: x.memetext })
     );
 

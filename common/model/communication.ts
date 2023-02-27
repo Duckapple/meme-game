@@ -145,4 +145,5 @@ export type LookupResponse = {
 export type ErrorResponse = {
   type: MessageType.ERROR;
   error: string;
+  data?: unknown;
 };

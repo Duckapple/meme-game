@@ -17,6 +17,7 @@ import {
   Move,
   MoveState,
   CardUpdate,
+  VoteMessage,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -59,6 +60,8 @@ function handleCardUpdate(cardUpdate?: CardUpdate) {
   }
 }
 
+function handleErrorData(data: unknown) {}
+
 ws.addEventListener("message", (evt) => {
   let m: MessageResponse;
   try {
@@ -95,12 +98,14 @@ ws.addEventListener("message", (evt) => {
       };
     }
     handleCardUpdate(m.cardUpdate);
-    if (m.moveState) {
+    console.log(m.moveState);
+    if (m.moveState !== undefined) {
       moveState.value = m.moveState;
     }
     if (m.update) addNotif(m.update);
   } else if (m.type === MessageType.ERROR) {
     if (m.error) addNotif(m.error, ERROR);
+    if (m.data) handleErrorData(m.data);
   } else if (m.type === MessageType.END_GAME) {
     roomDetails.value && (roomDetails.value.state = m.state);
     standings.value = m.standings;
@@ -203,6 +208,18 @@ const onMakeMove: MakeMoveFunction = (move) => {
   ws.send(JSON.stringify(msg));
 };
 
+const onMakeLike = (playIndex: number, voteState: boolean) => {
+  if (!roomDetails.value || !UUID.value) return;
+  const msg: VoteMessage = {
+    type: MessageType.VOTE,
+    roomID: roomDetails.value.roomID,
+    userID: UUID.value,
+    playIndex,
+    voteState,
+  };
+  ws.send(JSON.stringify(msg));
+};
+
 const onEndStandings = () => {
   if (!roomDetails.value || !UUID.value) return;
   const msg: EndStandingsMessage = {
@@ -234,6 +251,7 @@ const onEndStandings = () => {
       hand,
       username,
       onMakeMove,
+      onMakeLike,
       moveState,
     }"
   />

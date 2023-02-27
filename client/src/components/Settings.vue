@@ -24,6 +24,11 @@ const setKey = (key: "handSize" | "discardsPerRound", e: Event) => {
   if (val) props.settings[key] = val;
 };
 
+const setTimes = (key: keyof GameSettings["maxTimer"], e: Event) => {
+  const val = parse(e);
+  if (val) props.settings.maxTimer[key] = val * 1000;
+};
+
 const textForOmitOptions = computed(() => {
   const top = props.settings.canOmit.top;
   const bottom = props.settings.canOmit.bottom;
@@ -141,6 +146,41 @@ const textForOmitOptions = computed(() => {
     <span v-if="!isCreator">&nbsp;{{ settings.winCondition.n }}</span>
 
     {{ settings.winCondition.type }}
+  </div>
+  <div class="flex space-x-4">
+    <div>
+      <span>Pick move timer: </span>
+      <input
+        v-if="isCreator"
+        :value="settings.maxTimer.move / 1000"
+        name="timer-move"
+        id="timer-move"
+        @input="(e) => setTimes('move', e)"
+      />
+      <span v-if="!isCreator">{{ settings.maxTimer.move / 1000 }}</span>
+    </div>
+    <div>
+      <span>Vote timer: </span>
+      <input
+        v-if="isCreator"
+        :value="settings.maxTimer.vote / 1000"
+        name="timer-vote"
+        id="timer-vote"
+        @input="(e) => setTimes('vote', e)"
+      />
+      <span v-if="!isCreator">{{ settings.maxTimer.vote / 1000 }}</span>
+    </div>
+    <div>
+      <span>Standings timer: </span>
+      <input
+        v-if="isCreator"
+        :value="settings.maxTimer.standings / 1000"
+        name="timer-standings"
+        id="timer-standings"
+        @input="(e) => setTimes('standings', e)"
+      />
+      <span v-if="!isCreator">{{ settings.maxTimer.standings / 1000 }}</span>
+    </div>
   </div>
 </template>
 

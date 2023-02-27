@@ -32,6 +32,7 @@ const props = defineProps<{
   creator: string;
   settings: GameSettings;
   onMakeMove: MakeMoveFunction;
+  onMakeLike: (index: number, state: boolean) => void;
   moveState?: MoveState | null;
 }>();
 
@@ -54,17 +55,22 @@ const makeLike = (i: number) => {
       }, 400);
     }, 500);
     likeState.value[i] = !likeState.value[i];
+    props.onMakeLike(i, likeState.value[i]);
   }, 50);
   like.value?.appendChild(likeSpan);
 };
 
 const incomingMove = ref<Partial<Move>>({ player: props.username });
 
-watch(props, (p) => {
-  if (p.moveState === null) incomingMove.value = { player: p.username };
-});
-
 const currentCard = ref(0);
+
+watch(props, (p) => {
+  if (p.moveState === null) {
+    incomingMove.value = { player: p.username };
+    likeState.value = props.players.map(() => false);
+    currentCard.value = 0;
+  }
+});
 
 const touchStartX = ref<number>();
 const touchMoved = ref(false);
@@ -119,7 +125,7 @@ onUnmounted(() => {
 <template>
   <div
     class="absolute inset-0 p-8 flex flex-col max-w-[58rem] transition-[opacity transform] duration-500"
-    :class="{ 'opacity-0 scale-0': state.tzarsTurn }"
+    :class="{ 'opacity-0 scale-0': state.phase !== 'move' }"
   >
     <div class="flex space-x-2 overflow-x-auto overflow-y-visible">
       <div
@@ -177,9 +183,9 @@ onUnmounted(() => {
     </button>
   </div>
   <div
-    v-if="props.state.visual"
+    v-if="state.visual"
     class="absolute inset-0 p-8 transition-[opacity transform] flex items-center justify-center w-full h-full duration-500 overflow-hidden"
-    :class="{ 'opacity-0 scale-0': !state.tzarsTurn }"
+    :class="{ 'opacity-0 scale-0': state.phase !== 'vote' }"
   >
     <div
       v-for="(play, i) in state.plays"
@@ -193,10 +199,15 @@ onUnmounted(() => {
         v-if="play && play != 'HIDDEN'"
         :top="play.top"
         :bottom="play.bottom"
-        :visual="props.state.visual"
-        :class="narrowAxis"
+        :visual="state.visual"
+        :class="
+          (narrowAxis,
+          {
+            'saturate-50 blur': play.player === username,
+          })
+        "
         :style="staticHeight && { height: staticHeight + 'px' } /* FML */"
-        @dblclick="makeLike(i)"
+        @dblclick="play.player !== username && makeLike(i)"
         @touchmove="(e) => touchSwipe(e)"
         @touchend="
           () => {
@@ -217,6 +228,11 @@ onUnmounted(() => {
       >
         ❤️
       </span>
+      <span
+        v-if="play && play != 'HIDDEN' && play.player === username"
+        class="absolute inset-auto z-30 text-4xl md:text-8xl font-[Impacto] select-none"
+        >This is your meme!</span
+      >
     </div>
     <div ref="like" class="z-10"></div>
     <button
@@ -242,6 +258,21 @@ onUnmounted(() => {
     >
       &gt;
     </button>
+  </div>
+  <div
+    v-if="state.phase === 'standings' && props.state.visual"
+    class="absolute inset-0 backdrop-blur"
+  >
+    <div v-for="([move, pl, votes], i) in state.standings" class="relative">
+      <Meme
+        :bottom="move?.bottom"
+        :top="move?.top"
+        :visual="props.state.visual"
+      />
+      <div class="flex justify-center">
+        <span class="text-4xl"> {{ move?.player }} - {{ votes }} votes </span>
+      </div>
+    </div>
   </div>
   <span
     v-if="timerNow"

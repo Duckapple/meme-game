@@ -33,15 +33,18 @@ export interface GameSettings {
     n: number;
     type: "rounds" | "points";
   };
-  maxTimer: Record<"move" | "pick", number>;
+  pointCount: "votes" | "best";
+  maxTimer: Record<GameState["phase"], number>;
 }
 
 export interface GameState {
   visual: string | null;
   currentTzar: number;
-  tzarsTurn: boolean;
+  phase: "move" | "vote" | "standings";
   plays: (Move | Hidden | null)[];
   points: number[];
+  /** Ordered list of tuples of the move, player index, and the number of points */
+  standings?: [Move | null, number, number][];
   timerEnd: number;
 }
 

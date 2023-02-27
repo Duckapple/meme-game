@@ -31,8 +31,10 @@ export function createSettings(): GameSettings {
     },
     maxTimer: {
       move: 45000,
-      pick: 60000,
+      vote: 60000,
+      standings: 15000,
     },
+    pointCount: "votes",
   };
 }
 
@@ -61,8 +63,9 @@ export async function createInternalGameState(
   return {
     currentTzar,
     plays: players.map(() => null),
-    shuffle: players.map((_, i) => i + 1),
-    tzarsTurn: false,
+    shuffle: players.map((_, i) => i),
+    votes: players.map(() => new Set()),
+    phase: "move",
     hands: players.map(() => ({
       top: piles.top.splice(0, settings.handSize),
       bottom: piles.bottom.splice(0, settings.handSize),
@@ -76,22 +79,26 @@ export async function createInternalGameState(
   };
 }
 
-export function convertGameState(state: InternalGameState): GameState {
+export function convertGameState(
+  state: InternalGameState,
+  pName?: string
+): GameState {
   const plays = state.plays.map((play) =>
     play
-      ? state.tzarsTurn
-        ? { ...play, player: "" }
-        : ("HIDDEN" as Hidden)
+      ? state.phase === "vote"
+        ? { ...play, player: pName === play.player ? pName : "" }
+        : "HIDDEN"
       : null
   );
   return {
     plays,
     ...pick(state, [
       "currentTzar",
-      "tzarsTurn",
+      "phase",
       "visual",
       "points",
       "timerEnd",
+      "standings",
     ]),
   };
 }
@@ -105,11 +112,10 @@ export function stopTimeout(state: InternalGameState): void {
 
 export function setNextTurn(
   state: InternalGameState,
-  settings: GameSettings
+  settings: GameSettings,
+  players: Player[]
 ): void {
-  state.tzarsTurn = false;
-  state.plays = state.plays.map(() => null);
-  state.shuffle = state.plays.map((_, i) => i + 1);
+  state.phase = "move";
   const visual = state.piles.visuals.splice(0, 1)[0].filename;
   state.visual = visual;
   state.hands = state.hands.map(({ top, bottom }) => ({
@@ -131,22 +137,56 @@ export function setTzar(
   settings: GameSettings,
   players: Player[]
 ): void {
-  state.tzarsTurn = true;
+  state.phase = "vote";
   const shuffle = _.shuffle<[Move | null, number]>(
-    state.plays.map((play, i) => [play, i + 1])
+    state.plays.map((play, i) => [play, i])
   );
   state.plays = shuffle.map(([play]) => play);
   state.shuffle = shuffle.map(([, num]) => num);
+  state.votes = players.map(() => new Set());
   state.timerEnd = Math.round(
-    (new Date().getTime() + settings.maxTimer.pick) / 1000 + 1
+    (new Date().getTime() + settings.maxTimer.vote) / 1000 + 1
   );
   log(`Shuffle is ${JSON.stringify(state.shuffle)}`);
   stopTimeout(state);
   state.timeout = setTimeout(() => {
-    setNextTurn(state, settings);
+    setStandings(state, settings, players);
     const update: UpdateRoomResponse = {
       type: MessageType.UPDATE_ROOM,
-      update: "Time is up! Moving on to making moves.",
+      update: "Time is up! Moving on to standings.",
+      state: convertGameState(state),
+      moveState: null,
+    };
+    players.forEach(({ socket }) => sendOnSocket(socket, update));
+  }, settings.maxTimer.vote + 1000);
+}
+
+export function setStandings(
+  state: InternalGameState,
+  settings: GameSettings,
+  players: Player[]
+): void {
+  state.phase = "standings";
+  const results = state.votes
+    .map<[Move | null, number, number]>((set, i) => [
+      state.plays[i],
+      state.shuffle[i],
+      set.size,
+    ])
+    .sort(([, , a], [, , b]) => b - a);
+  state.standings = results;
+  state.plays = state.plays.map(() => null);
+  state.shuffle = state.plays.map((_, i) => i);
+
+  state.timerEnd = Math.round(
+    (new Date().getTime() + settings.maxTimer.standings) / 1000 + 1
+  );
+  stopTimeout(state);
+  state.timeout = setTimeout(() => {
+    setNextTurn(state, settings, players);
+    const update: UpdateRoomResponse = {
+      type: MessageType.UPDATE_ROOM,
+      update: "Time is up! Moving on to next round.",
       state: convertGameState(state),
       moveState: null,
     };
@@ -156,5 +196,5 @@ export function setTzar(
         cardUpdate: { type: "replace", ...state.hands[i] },
       })
     );
-  }, settings.maxTimer.pick + 1000);
+  }, settings.maxTimer.standings + 1000);
 }

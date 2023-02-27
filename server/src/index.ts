@@ -62,13 +62,14 @@ const ensureEnv = (key: string): string => {
 const visual_cdn = ensureEnv("VISUAL_CDN");
 // const jwt_secret = ensureEnv("JWT_SECRET");
 
-export function createError(error: string): string {
+export function sendError(ws: WS.WebSocket, error: string, data?: unknown) {
   const err: ErrorResponse = {
     type: MessageType.ERROR,
     error,
+    data,
   };
   log(`Encountered error '${error}'`);
-  return JSON.stringify(err);
+  return sendOnSocket(ws, err);
 }
 
 type PlayerAndRoom = {
@@ -77,18 +78,17 @@ type PlayerAndRoom = {
   room: Room;
 };
 /** This ensures that room and player are defined, sending errors if not */
-function ensureUserAndRoom(
+function ensurePlayerAndRoom(
   ws: WS.WebSocket,
   m: UserAndRoom
 ): false | PlayerAndRoom {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return void ws.send(createError("Incorrect room ID")), false;
+    return void sendError(ws, "Incorrect room ID"), false;
 
   const playerIndex = room.players.findIndex(({ UUID }) => m.userID === UUID);
-  if (playerIndex === -1)
-    return void ws.send(createError("Invalid user ID")), false;
+  if (playerIndex === -1) return void sendError(ws, "Invalid user ID"), false;
 
   return {
     room,
@@ -98,7 +98,7 @@ function ensureUserAndRoom(
 }
 
 function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
-  if (!m.userID || !m.username) return ws.send(createError("No user ID"));
+  if (!m.userID || !m.username) return sendError(ws, "No user ID");
 
   let roomID: string;
   if (m.roomID && !rooms.has(m.roomID)) roomID = m.roomID;
@@ -130,11 +130,11 @@ function handleCreateRoom(ws: WS.WebSocket, m: CreateRoomMessage) {
 }
 
 function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
-  if (!m.userID || !m.username) return ws.send(createError("No user ID"));
+  if (!m.userID || !m.username) return sendError(ws, "No user ID");
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
+    return sendError(ws, "Incorrect room ID");
 
   const existingIndex = room.players.findIndex(
     (player) => player.name === m.username
@@ -145,11 +145,11 @@ function handleJoinRoom(ws: WS.WebSocket, m: JoinRoomMessage) {
     const closedStates: (0 | 1 | 2 | 3)[] = [WS.CLOSING, WS.CLOSED];
     // If connection was closed, allow hijacking
     if (closedStates.includes(existing.socket.readyState)) existing.socket = ws;
-    else return ws.send(createError("User already in room"));
+    else return sendError(ws, "User already in room");
     // } else if (room.players.length >= 4) {
-    //   return ws.send(createError("Room full"));
+    //   return sendError(ws, "Room full");
   } else if (room.state) {
-    return ws.send(createError("Game already in progress"));
+    return sendError(ws, "Game already in progress");
   }
 
   const otherPlayers = room.players.map(({ socket }) => socket);
@@ -190,10 +190,10 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
+    return sendError(ws, "Incorrect room ID");
 
   if (!m.userID || room.creator.UUID !== m.userID)
-    return ws.send(createError("Invalid user ID"));
+    return sendError(ws, "Invalid user ID");
 
   let check = true;
   const playerCheck = room.players.map(({ name }) => name);
@@ -204,7 +204,7 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
   });
 
   if (!check || playerCheck.length > 0)
-    return ws.send(createError("Invalid player list"));
+    return sendError(ws, "Invalid player list");
 
   let worked = true;
   const reordered = m.players.map((name) => {
@@ -212,7 +212,7 @@ function handleRearrangePlayers(ws: WS.WebSocket, m: RearrangePlayersMessage) {
     if (!player) worked = false;
     return player as Player;
   });
-  if (!worked) return ws.send(createError("Could not reorder players"));
+  if (!worked) return sendError(ws, "Could not reorder players");
 
   room.players = reordered;
 
@@ -229,10 +229,10 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
+    return sendError(ws, "Incorrect room ID");
 
   if (!m.userID || room.creator.UUID !== m.userID)
-    return ws.send(createError("Invalid user ID"));
+    return sendError(ws, "Invalid user ID");
 
   const state = await createInternalGameState(
     room.players.map(({ name }) => name),
@@ -259,9 +259,12 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   stopTimeout(state);
   state.timeout = setTimeout(() => {
     setTzar(state, room.settings, room.players);
-    update.state = convertGameState(state);
     update.update = "Time is up! Moving on to voting.";
-    room.players.forEach(({ socket }) => socket.send(JSON.stringify(update)));
+    room.players.forEach(({ socket, name }) =>
+      socket.send(
+        JSON.stringify({ ...update, state: convertGameState(state, name) })
+      )
+    );
   }, room.settings.maxTimer.move + 1000);
 }
 
@@ -269,37 +272,35 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   // Cleanup allows us to only mutate state once we are sure the operation can be done
   const cleanup: (() => void)[] = [];
 
-  const res = ensureUserAndRoom(ws, m);
-  if (!res) return;
+  const playerAndRoom = ensurePlayerAndRoom(ws, m);
+  if (!playerAndRoom) return;
 
-  const { room, playerIndex, player } = res;
+  const { room, playerIndex, player } = playerAndRoom;
 
   const state = room.state;
-  if (!state) return ws.send(createError("Game not in progress"));
+  if (!state) return sendError(ws, "Game not in progress");
 
   log({ playerIndex, currentTzar: state.currentTzar });
 
-  if (state.tzarsTurn === (state.currentTzar !== playerIndex))
-    return ws.send(createError("Cannot make a move when not your turn"));
+  if (state.phase !== "move")
+    return sendError(ws, "Cannot make a move when not your turn");
 
   if (state.plays[playerIndex])
-    return ws.send(createError("Cannot make additional moves on your turn"));
+    return sendError(ws, "Cannot make additional moves on your turn");
 
   if (!room.settings.canOmit.top && !m.move.top)
-    return ws.send(createError("Cannot omit top text"));
+    return sendError(ws, "Cannot omit top text");
   if (!room.settings.canOmit.bottom && !m.move.bottom)
-    return ws.send(createError("Cannot omit bottom text"));
+    return sendError(ws, "Cannot omit bottom text");
 
-  let move: Move = { player: m.userID };
+  let move: Move = { player: player.name };
   const mt = m.move.top;
   if (mt) {
     const topCardIndex = state.hands[playerIndex].top.findIndex(
       ({ id }) => mt.id === id
     );
     if (topCardIndex === -1)
-      return ws.send(
-        createError("You do not have the top card you tried to play!")
-      );
+      return sendError(ws, "You do not have the top card you tried to play!");
     move.top = state.hands[playerIndex].top[topCardIndex];
     cleanup.push(() => state.hands[playerIndex].top.splice(topCardIndex, 1));
   }
@@ -309,8 +310,9 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
       ({ id }) => mb.id === id
     );
     if (bottomCardIndex === -1)
-      return ws.send(
-        createError("You do not have the bottom card you tried to play!")
+      return sendError(
+        ws,
+        "You do not have the bottom card you tried to play!"
       );
     move.bottom = state.hands[playerIndex].bottom[bottomCardIndex];
     cleanup.push(() =>
@@ -332,12 +334,12 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 
   const msg: UpdateRoomResponse = {
     type: MessageType.UPDATE_ROOM,
-    state: convertGameState(state),
     update: `${player.name} made a move`,
   };
 
   const response: UpdateRoomResponse = {
     ...msg,
+    state: convertGameState(state, player.name),
     update: `You made a move`,
     moveState: {
       bottom: mb?.id,
@@ -345,11 +347,13 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
     },
   };
 
-  for (const { socket, UUID } of room.players) {
+  for (const { socket, UUID, name } of room.players) {
     if (m.userID === UUID) {
       socket.send(JSON.stringify(response));
     } else {
-      socket.send(JSON.stringify(msg));
+      socket.send(
+        JSON.stringify({ ...msg, state: convertGameState(state, name) })
+      );
     }
   }
 
@@ -366,7 +370,23 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
 }
 
 function handleVote(ws: WS.WebSocket, m: VoteMessage) {
-  throw new Error("Function not implemented.");
+  const playerAndRoom = ensurePlayerAndRoom(ws, m);
+  if (!playerAndRoom) return;
+  const { room, playerIndex, player } = playerAndRoom;
+  const state = room.state;
+  if (!state) return sendError(ws, "Cannot vote on game not in progress.");
+  if (!state.phase)
+    return sendError(ws, "Cannot vote when not in voting phase");
+  if (room.settings.gameStyle === "TZAR" && playerIndex !== state.currentTzar)
+    return sendError(ws, "Cannot vote when not Tzar");
+  if (state.shuffle[m.playIndex] === playerIndex)
+    // Don't care to notify player
+    return sendError(ws, "Can't vote for yourself!");
+  if (m.voteState) {
+    state.votes[m.playIndex].add(m.userID);
+  } else {
+    state.votes[m.playIndex].delete(m.userID);
+  }
 }
 
 // function handleEndOfRound(room: Room) {
@@ -429,10 +449,10 @@ function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
+    return sendError(ws, "Incorrect room ID");
 
   if (!m.userID || room.creator.UUID !== m.userID)
-    return ws.send(createError("Invalid user ID"));
+    return sendError(ws, "Invalid user ID");
 
   room.settings = m.settings;
 
@@ -449,10 +469,10 @@ function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
   const room = rooms.get(m.roomID);
 
   if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return ws.send(createError("Incorrect room ID"));
+    return sendError(ws, "Incorrect room ID");
 
   if (!m.userID || room.creator.UUID !== m.userID)
-    return ws.send(createError("Invalid user ID"));
+    return sendError(ws, "Invalid user ID");
 
   const msg: EndStandingsResponse = {
     type: MessageType.END_STANDINGS,
@@ -545,7 +565,7 @@ app.ws("/ws", (ws) => {
       m = JSON.parse(msg as unknown as string) as Message;
     } catch (e) {
       log(msg);
-      ws.send(createError("Invalid message"));
+      sendError(ws, "Invalid message");
       return;
     }
     if (m.type === MessageType.ASSIGN_UUID) {
