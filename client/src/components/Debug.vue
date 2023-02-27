@@ -3,7 +3,6 @@ import { store, username, UUID, roomDetails } from "../state";
 import { ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { MessageType } from "../model";
-import { propsToAttrMap } from "@vue/shared";
 const isDebug = store.settings.debug || false;
 const showDebug = ref(false);
 

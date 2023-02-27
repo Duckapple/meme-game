@@ -3,19 +3,21 @@ import type { RoomDetails } from "./model";
 
 const localStoreKey = "meme-game-store";
 
-let initialStore = { settings: { colorBlind: false } };
+type Store = {
+  settings: {
+    colorBlind: boolean;
+    debug?: boolean;
+  };
+};
+
+let initialStore: Store = { settings: { colorBlind: false } };
 const localStore = localStorage.getItem(localStoreKey);
 
 if (localStore) {
   initialStore = JSON.parse(localStore);
 }
 
-export const store = reactive<{
-  settings: {
-    colorBlind: boolean;
-    debug?: boolean;
-  };
-}>(initialStore);
+export const store = reactive<Store>(initialStore);
 
 watch(store, (val) => {
   const stringified = JSON.stringify(val);
