@@ -43,8 +43,9 @@ const lines = ref<(string | { class?: string; text: string }[])[]>([
 
 subscriptions.push([
   "message",
-  (e) => {
-    if (!("data" in e) || typeof e.data !== "string") return;
+  (e: any) => {
+    if (!("data" in e)) return;
+    if (typeof (e as any).data !== "string") return;
     lines.value.push([
       { class: "text-green-500", text: "server" },
       { text: "> " },
