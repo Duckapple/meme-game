@@ -21,7 +21,6 @@ export async function refresh() {
     lastRefresh = +new Date();
     log("Refreshing content...");
     const toptextsText = await (await fetch(api + "/toptexts")).text();
-    log(toptextsText);
 
     toptexts = JSON.parse(toptextsText).map(
       (x: { id: number; memetext: string }) => ({ id: x.id, text: x.memetext })

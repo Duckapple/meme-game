@@ -14,7 +14,7 @@ const value = ref<string>();
 
 const event = (e: KeyboardEvent) => {
   if (e.isComposing || !isDebug) return;
-  if (e.ctrlKey && e.key === "d") {
+  if (e.ctrlKey && e.key === "`") {
     e.preventDefault();
     showDebug.value = !showDebug.value;
   }
