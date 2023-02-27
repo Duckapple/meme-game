@@ -201,12 +201,7 @@ onUnmounted(() => {
         :top="play.top"
         :bottom="play.bottom"
         :visual="state.visual"
-        :class="
-          (narrowAxis,
-          {
-            'saturate-50 blur': play.player === username,
-          })
-        "
+        :class="narrowAxis"
         :image-mode="props.settings.imageMode"
         :style="staticHeight && { height: staticHeight + 'px' } /* FML */"
         @dblclick="play.player !== username && makeLike(i)"
@@ -230,15 +225,16 @@ onUnmounted(() => {
       >
         ❤️
       </span>
-      <span
+      <div
         v-if="play && play != 'HIDDEN' && play.player === username"
-        class="absolute inset-auto z-30 text-4xl md:text-8xl font-[Impacto] select-none"
-        >This is your meme!</span
+        class="absolute flex justify-center items-center inset-0 z-10 text-4xl md:text-8xl font-[Impacto] select-none backdrop-blur backdrop-brightness-50"
       >
+        <span>This is your meme!</span>
+      </div>
     </div>
     <div ref="like" class="z-10"></div>
     <button
-      class="absolute top-0 bottom-0 left-0 w-16 text-5xl transition-opacity md:w-64 2xl:w-1/6 bg-gradient-to-r hover:dark:from-slate-800 hover:from-slate-100 text-shadow"
+      class="absolute top-0 bottom-0 left-0 z-20 w-16 text-5xl transition-opacity md:w-64 2xl:w-1/6 bg-gradient-to-r hover:dark:from-slate-800 hover:from-slate-100 text-shadow"
       :class="{
         'opacity-0 cursor-default': currentCard === 0,
         'opacity-50 hover:opacity-100': currentCard !== 0,
@@ -251,7 +247,7 @@ onUnmounted(() => {
       &lt;
     </button>
     <button
-      class="absolute top-0 bottom-0 right-0 w-16 text-5xl transition-opacity md:w-64 2xl:w-1/6 bg-gradient-to-l hover:dark:from-slate-800 hover:from-slate-100 text-shadow"
+      class="absolute top-0 bottom-0 right-0 z-20 w-16 text-5xl transition-opacity md:w-64 2xl:w-1/6 bg-gradient-to-l hover:dark:from-slate-800 hover:from-slate-100 text-shadow"
       :class="{
         'opacity-0 cursor-default': currentCard >= players.length - 1,
         'opacity-50 hover:opacity-100': currentCard !== players.length - 1,
@@ -279,7 +275,7 @@ onUnmounted(() => {
   </div>
   <span
     v-if="timerNow"
-    class="absolute scale-[300%] right-16 top-16 2xl:right-1/4 text-3xl text-shadow"
+    class="absolute scale-[300%] right-16 top-16 z-30 2xl:right-1/4 text-3xl text-shadow"
   >
     {{ Math.max(0, state.timerEnd - timerNow) }}
   </span>
