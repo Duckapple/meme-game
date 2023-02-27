@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { store, username, UUID, roomDetails } from "../state";
-import { ws } from "../comms";
+import { mountSubscriptions, subscriptions, ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { MessageType } from "../model";
 const isDebug = store.settings.debug || false;
@@ -41,20 +41,26 @@ const lines = ref<(string | { class?: string; text: string }[])[]>([
   // 'Type "help" for a list of commands.',
 ]);
 
-ws.addEventListener("message", (e) => {
-  lines.value.push([
-    { class: "text-green-500", text: "server" },
-    { text: "> " },
-    { class: "text-yellow-500", text: e.data },
-  ]);
-});
+subscriptions.push([
+  "message",
+  (e) => {
+    if (!("data" in e) || typeof e.data !== "string") return;
+    lines.value.push([
+      { class: "text-green-500", text: "server" },
+      { text: "> " },
+      { class: "text-yellow-500", text: e.data },
+    ]);
+  },
+]);
+
+mountSubscriptions();
 
 const handleSend = (msgType: string, json: Record<string, any>) => {
   if (!(msgType in MessageType)) {
     lines.value.push([{ class: "text-red-500", text: "Invalid message type" }]);
     return;
   }
-  ws.send(
+  ws.value.send(
     JSON.stringify({
       username: username.value,
       userID: UUID.value,
@@ -75,7 +81,7 @@ const handleLookup = (elementType: string, data: any) => {
       { class: "text-red-500", text: "Not supported yet lol" },
     ]);
   } else {
-    ws.send(
+    ws.value.send(
       JSON.stringify({
         type: MessageType.LOOKUP,
         elementType,

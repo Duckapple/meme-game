@@ -11,4 +11,21 @@ function createWS(): WebSocket {
   return theWs;
 }
 
-export const ws = reactive(createWS());
+export let ws = ref<WebSocket>(createWS());
+
+type SubType = Parameters<WebSocket["addEventListener"]>;
+
+export const subscriptions = reactive<SubType[]>([]);
+
+function handleReconnect(ev: CloseEvent) {
+  ws.value = createWS();
+  mountSubscriptions();
+}
+
+export function mountSubscriptions() {
+  console.log("Subbing with", subscriptions.length, "subscribers");
+  for (const sub of subscriptions) {
+    ws.value.addEventListener(...sub);
+  }
+  ws.value.addEventListener("close", handleReconnect);
+}

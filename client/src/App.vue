@@ -26,7 +26,7 @@ import GameEnd from "./components/GameEnd.vue";
 import { stopConfetti } from "./confetti";
 import Debug from "./components/Debug.vue";
 
-import { ws } from "./comms";
+import { subscriptions, ws } from "./comms";
 import { username, UUID, visual_cdn, roomDetails } from "./state";
 
 export type MakeMoveFunction = (args: Partial<Move>) => void;
@@ -62,8 +62,9 @@ function handleCardUpdate(cardUpdate?: CardUpdate) {
 
 function handleErrorData(data: unknown) {}
 
-ws.addEventListener("message", (evt) => {
+function onMessage(evt: MessageEvent | Event) {
   let m: MessageResponse;
+  if (!("data" in evt)) return;
   try {
     m = JSON.parse(evt.data.toString());
   } catch (err) {
@@ -120,27 +121,33 @@ ws.addEventListener("message", (evt) => {
   } else {
     addNotif(`Got unhandled message '${evt.data}'`);
   }
-});
+}
 
-ws.addEventListener("open", () => {
-  addNotif("Connected to server");
-  let roomID: string | undefined = undefined;
-  const roomFromHash = location.hash.match("#(\\d{6})")?.[1];
-  if (roomFromHash) {
-    roomID = roomFromHash;
-  }
-  const msg: AssignUUIDMessage = {
-    type: MessageType.ASSIGN_UUID,
-    userID: UUID.value,
-    roomID,
-  };
-  ws.send(JSON.stringify(msg));
-});
-ws.addEventListener("close", (ev) => {
-  addNotif("Disconnected from server...");
-  // roomDetails.value = undefined;
-  // location.hash = "";
-});
+subscriptions.push(["message", onMessage]);
+
+subscriptions.push([
+  "open",
+  () => {
+    addNotif("Connected to server");
+    let roomID: string | undefined = undefined;
+    const roomFromHash = location.hash.match("#(\\d{6})")?.[1];
+    if (roomFromHash) {
+      roomID = roomFromHash;
+    }
+    const msg: AssignUUIDMessage = {
+      type: MessageType.ASSIGN_UUID,
+      userID: UUID.value,
+      roomID,
+    };
+    ws.value.send(JSON.stringify(msg));
+  },
+]);
+subscriptions.push([
+  "close",
+  () => {
+    addNotif("Disconnected from server...");
+  },
+]);
 
 const onJoin = (userName: string, roomID: string) => {
   if (!UUID.value) return;
@@ -151,7 +158,7 @@ const onJoin = (userName: string, roomID: string) => {
     userID: UUID.value,
     roomID,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 const onCreate = (userName: string) => {
   if (!UUID.value) return;
@@ -161,7 +168,7 @@ const onCreate = (userName: string) => {
     username: userName,
     userID: UUID.value,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 const onSettingsUpdate = () => {
   if (!roomDetails.value || !UUID.value) return;
@@ -171,7 +178,7 @@ const onSettingsUpdate = () => {
     roomID: roomDetails.value.roomID,
     settings: roomDetails.value.settings,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 const onReorder = (players: string[]) => {
   if (!roomDetails.value || !UUID.value) return;
@@ -181,7 +188,7 @@ const onReorder = (players: string[]) => {
     players,
     userID: UUID.value,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 const onBegin = () => {
   if (!roomDetails.value || !UUID.value) return;
@@ -190,7 +197,7 @@ const onBegin = () => {
     roomID: roomDetails.value.roomID,
     userID: UUID.value,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 
 const onMakeMove: MakeMoveFunction = (move) => {
@@ -205,7 +212,7 @@ const onMakeMove: MakeMoveFunction = (move) => {
     userID: UUID.value,
     move,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 
 const onMakeLike = (playIndex: number, voteState: boolean) => {
@@ -217,7 +224,7 @@ const onMakeLike = (playIndex: number, voteState: boolean) => {
     playIndex,
     voteState,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 
 const onEndStandings = () => {
@@ -227,7 +234,7 @@ const onEndStandings = () => {
     roomID: roomDetails.value.roomID,
     userID: UUID.value,
   };
-  ws.send(JSON.stringify(msg));
+  ws.value.send(JSON.stringify(msg));
 };
 </script>
 
