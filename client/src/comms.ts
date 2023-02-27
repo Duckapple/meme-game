@@ -18,6 +18,7 @@ type SubType = Parameters<WebSocket["addEventListener"]>;
 export const subscriptions = reactive<SubType[]>([["close", handleReconnect]]);
 
 function handleReconnect() {
+  unsubscribe();
   ws.value = createWS();
   mountSubscriptions();
 }
@@ -26,5 +27,12 @@ export function mountSubscriptions() {
   console.log("Subbing with", subscriptions.length, "subscribers");
   for (const sub of subscriptions) {
     ws.value.addEventListener(...sub);
+  }
+}
+
+export function unsubscribe() {
+  console.log("Unsubbing with", subscriptions.length, "subscribers");
+  for (const sub of subscriptions) {
+    ws.value.removeEventListener(...sub);
   }
 }
