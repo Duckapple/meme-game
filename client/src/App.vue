@@ -275,7 +275,7 @@ const onEndStandings = () => {
     v-if="standings"
     :standings="standings"
     :username="username"
-    :endGame="true ? onEndStandings : undefined"
+    :endGame="username === roomDetails?.creator ? onEndStandings : undefined"
   />
   <Debug />
 </template>

@@ -1,6 +1,7 @@
 import lodash from "lodash";
 const { pick, shuffle } = lodash;
 import {
+  EndGameResponse,
   GameSettings,
   GameState,
   GameStyle,
@@ -77,6 +78,7 @@ export async function createInternalGameState(
     timerEnd: Math.round(
       (new Date().getTime() + settings.maxTimer.move) / 1000 + 1
     ),
+    rounds: 0,
   };
 }
 
@@ -100,6 +102,7 @@ export function convertGameState(
       "points",
       "timerEnd",
       "standings",
+      "rounds",
     ]),
   };
 }
@@ -116,6 +119,7 @@ export function setNextTurn(
   settings: GameSettings,
   players: Player[]
 ): void {
+  state.rounds += 1;
   state.phase = "move";
   const visual = state.piles.visuals.splice(0, 1)[0].filename;
   state.visual = visual;
@@ -162,6 +166,42 @@ export function setTzar(
   }, settings.maxTimer.vote + 1000);
 }
 
+function err(_switchValue: never): never {
+  throw new Error("Unhandled switch case: " + _switchValue);
+}
+
+function hasAnyoneWon(
+  state: InternalGameState,
+  settings: GameSettings
+): boolean {
+  switch (settings.winCondition.type) {
+    case "points":
+      return state.points.some((p) => p >= settings.winCondition.n);
+    case "rounds":
+      return state.rounds >= settings.winCondition.n;
+    default:
+      err(settings.winCondition.type);
+  }
+}
+
+function getStanding(
+  state: InternalGameState,
+  settings: GameSettings,
+  players: Player[]
+): string[] {
+  switch (settings.winCondition.type) {
+    case "points":
+    case "rounds":
+      const playersIndex = players.map((p, i) => ({ p, i }));
+      playersIndex.sort(
+        ({ i: i1 }, { i: i2 }) => state.points[i2] - state.points[i1]
+      );
+      return playersIndex.map(({ p: { name } }) => name);
+    default:
+      err(settings.winCondition.type);
+  }
+}
+
 export function setStandings(
   state: InternalGameState,
   settings: GameSettings,
@@ -176,6 +216,7 @@ export function setStandings(
     ])
     .sort(([, , a], [, , b]) => b - a);
   state.standings = results;
+  state.points[results[0][1]] += 1;
   state.plays = state.plays.map(() => null);
   state.shuffle = state.plays.map((_, i) => i);
 
@@ -184,6 +225,15 @@ export function setStandings(
   );
   stopTimeout(state);
   state.timeout = setTimeout(() => {
+    if (hasAnyoneWon(state, settings)) {
+      const standingsMsg: EndGameResponse = {
+        type: MessageType.END_GAME,
+        state: convertGameState(state),
+        standings: getStanding(state, settings, players),
+      };
+      players.forEach(({ socket }) => sendOnSocket(socket, standingsMsg));
+      return;
+    }
     setNextTurn(state, settings, players);
     const update: UpdateRoomResponse = {
       type: MessageType.UPDATE_ROOM,

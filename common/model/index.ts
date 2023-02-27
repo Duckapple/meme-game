@@ -47,6 +47,7 @@ export interface GameState {
   /** Ordered list of tuples of the move, player index, and the number of points */
   standings?: [Move | null, number, number][];
   timerEnd: number;
+  rounds: number;
 }
 
 export interface CardUpdate {

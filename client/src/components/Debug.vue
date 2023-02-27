@@ -136,7 +136,7 @@ requestAnimationFrame(() => {
 <template>
   <div
     v-if="isDebug"
-    class="px-2 pt-2 absolute inset-x-0 top-0 transition-transform -translate-y-full z-[100] backdrop-blur"
+    class="px-2 pt-2 absolute inset-x-0 top-0 transition-transform -translate-y-full z-[100] backdrop-blur backdrop-brightness-50"
     :class="{ 'translate-y-0': showDebug }"
   >
     <div ref="pre" class="flex flex-col overflow-y-auto font-mono h-60">
