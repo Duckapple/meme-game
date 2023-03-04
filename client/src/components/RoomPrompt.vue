@@ -49,6 +49,7 @@ const roomcodeError = ref<boolean>(false);
       :class="{
         'outline outline-2 outline-red-500': roomcodeError && !roomCode,
       }"
+      :upper="true"
     />
     <!-- <div class="flex items-center">
           <label for="obscured" class="mr-6">Hide Room Code</label>

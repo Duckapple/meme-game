@@ -46,8 +46,14 @@ const UUIDs = new Set<string>();
 
 export const rooms: Map<string, Room> = new Map();
 
+const radix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 export function createRoomID(): string {
-  return randomInt(100000, 999999).toString();
+  let id = "";
+  for (let i = 0; i < 4; i++) {
+    id += radix[randomInt(0, radix.length)];
+  }
+  return id;
 }
 
 /**

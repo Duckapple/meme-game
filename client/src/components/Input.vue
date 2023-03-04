@@ -1,12 +1,14 @@
 <script lang="ts" setup>
-defineProps<{
+const props = defineProps<{
   name?: string;
   maxlength?: number;
   placeholder: string;
   password?: boolean;
   text: string;
   onInput: (input: string) => void;
+  upper?: boolean;
 }>();
+const maybeUpper = (s: string) => (props.upper ? s.toUpperCase() : s);
 </script>
 <template>
   <div class="group w-80 md:w-md lg:w-2xl">
@@ -17,7 +19,7 @@ defineProps<{
       :placeholder="placeholder"
       :maxlength="maxlength"
       :value="text"
-      @input="(e) => onInput((e.target as Record<'value', string> | null)?.['value'] ?? '')"
+      @input="(e) => onInput(maybeUpper((e.target as Record<'value', string> | null)?.['value'] ?? ''))"
     />
     <div
       class="transition-[width,translate] w-0 h-1 -mt-1 bg-gray-800 group-hover:w-full group-focus-within:w-full dark:bg-gray-100"
