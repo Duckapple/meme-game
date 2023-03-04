@@ -265,7 +265,7 @@ const onEndStandings = () => {
   <div class="fixed bottom-4 right-4">
     <div
       v-for="{ message, error } in notifs"
-      class="p-4 mb-2 bg-white border-2 border-red-500 w-md dark:bg-gray-900"
+      class="p-4 mb-2 bg-white border-2 border-red-500 w-sm md:w-md dark:bg-gray-900"
       :class="{ 'border-red-500': error, 'border-gray-500': !error }"
     >
       {{ message }}

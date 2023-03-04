@@ -115,7 +115,7 @@ const timerIntervalHandle = ref<number>();
 onMounted(() => {
   timerIntervalHandle.value = setInterval(() => {
     timerNow.value = Math.round(new Date().getTime() / 1000);
-  }, 250) as unknown as number; // Typing is just wrong, wow
+  }, 250) as unknown as number; // Typing is Node rather than browser, huh
 });
 onUnmounted(() => {
   timerIntervalHandle.value && clearInterval(timerIntervalHandle.value);
@@ -127,7 +127,7 @@ onUnmounted(() => {
     class="absolute inset-0 p-8 flex flex-col max-w-[58rem] transition-[opacity transform] duration-500"
     :class="{ 'opacity-0 scale-0': state.phase !== 'move' }"
   >
-    <div class="flex space-x-2 overflow-x-auto overflow-y-visible">
+    <div class="flex space-x-2 overflow-x-auto overflow-y-visible min-h-[2rem]">
       <div
         v-for="top in hand.top"
         class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
@@ -143,7 +143,9 @@ onUnmounted(() => {
         <span class="absolute text-xs right-2 bottom-2">{{ top.id }}</span>
       </div>
     </div>
-    <div class="flex pt-4 space-x-2 overflow-x-auto overflow-y-visible">
+    <div
+      class="flex pt-4 space-x-2 overflow-x-auto overflow-y-visible min-h-[2rem]"
+    >
       <div
         v-for="bottom in hand.bottom"
         class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
@@ -220,16 +222,18 @@ onUnmounted(() => {
         Nothing to see here...
       </span>
       <span
-        class="absolute transition-transform scale-0 left-16 bottom-16 2xl:left-1/4"
+        class="absolute transition-transform scale-0 select-none left-16 bottom-16 2xl:left-1/4"
         :class="{ 'scale-[500%]': likeState[i] }"
       >
         ❤️
       </span>
       <div
         v-if="play && play != 'HIDDEN' && play.player === username"
-        class="absolute flex justify-center items-center inset-0 z-10 text-4xl md:text-8xl font-[Impacto] select-none backdrop-blur backdrop-brightness-50"
+        class="absolute flex justify-center items-center inset-auto z-10 text-4xl md:text-8xl font-[Impacto] select-none"
       >
-        <span>This is your meme!</span>
+        <span class="p-6 backdrop-blur backdrop-brightness-75"
+          >This is your meme!</span
+        >
       </div>
     </div>
     <div ref="like" class="z-10"></div>

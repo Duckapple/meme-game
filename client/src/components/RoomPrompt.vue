@@ -22,11 +22,15 @@ const usernameError = ref<boolean>(false);
 const roomcodeError = ref<boolean>(false);
 </script>
 <template>
-  <div class="flex flex-col items-center justify-center w-screen h-screen">
-    <h1 class="text-6xl">Meme Game</h1>
-    <p>Provided by me and my buddy Mads</p>
+  <div class="flex flex-col items-center">
+    <h1 class="text-center text-9xl md:text-[10rem] pt-8 md:pt-12 select-none">
+      Meme Game
+    </h1>
+    <p class="pb-4 text-center md:pb-8 lg:mb-8 lg:text-xl">
+      Provided by me and my buddy Mads
+    </p>
     <Input
-      class="mt-8 mb-32"
+      class="mb-4 lg:mb-8"
       :class="{
         'outline outline-2 outline-red-500': usernameError && !username,
       }"
@@ -35,36 +39,18 @@ const roomcodeError = ref<boolean>(false);
       :onInput="(v) => typeof v === 'string' && (username = v)"
       :name="username"
     />
-    <div class="flex items-end justify-center space-x-16 text-2xl">
-      <div class="flex justify-center w-md">
-        <button
-          class="btn"
-          @click="
-            () => {
-              if (username) {
-                onDone();
-                onCreate(username);
-              } else {
-                usernameError = true;
-              }
-            }
-          "
-        >
-          <span class="block px-8 py-4 cursor-pointer">Create New Room</span>
-        </button>
-      </div>
-      <div class="flex flex-col items-center justify-center space-y-8 w-md">
-        <Input
-          placeholder="Enter Room Code..."
-          :maxlength="10"
-          :text="roomCode"
-          :onInput="(v) => typeof v === 'string' && (roomCode = v)"
-          :password="obscured"
-          :class="{
-            'outline outline-2 outline-red-500': roomcodeError && !roomCode,
-          }"
-        />
-        <!-- <div class="flex items-center">
+    <Input
+      placeholder="Enter Room Code..."
+      :maxlength="10"
+      :text="roomCode"
+      :onInput="(v) => typeof v === 'string' && (roomCode = v)"
+      :password="obscured"
+      class="mb-4 lg:mb-8"
+      :class="{
+        'outline outline-2 outline-red-500': roomcodeError && !roomCode,
+      }"
+    />
+    <!-- <div class="flex items-center">
           <label for="obscured" class="mr-6">Hide Room Code</label>
           <input
             type="checkbox"
@@ -74,23 +60,43 @@ const roomcodeError = ref<boolean>(false);
             class="w-8 h-8"
           />
         </div> -->
-        <button
-          class="btn"
-          @click="
-            () => {
-              if (username && roomCode) {
-                onDone();
-                onJoin(username, roomCode);
-              } else {
-                usernameError = !username;
-                roomcodeError = !roomCode;
-              }
-            }
-          "
-        >
-          <span class="block px-8 py-4 cursor-pointer">Join Existing Room</span>
-        </button>
-      </div>
-    </div>
+    <button
+      class="mb-16 lg:mb-24 btn w-80 md:w-md lg:w-2xl"
+      @click="
+        () => {
+          if (username && roomCode) {
+            onDone();
+            onJoin(username, roomCode);
+          } else {
+            usernameError = !username;
+            roomcodeError = !roomCode;
+          }
+        }
+      "
+    >
+      <span
+        class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"
+        >Join Existing Room</span
+      >
+    </button>
+    <button
+      class="btn w-80 md:w-md lg:w-2xl"
+      @click="
+        () => {
+          if (username) {
+            onDone();
+            onCreate(username);
+          } else {
+            usernameError = true;
+          }
+        }
+      "
+    >
+      <span
+        class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"
+      >
+        Create New Room
+      </span>
+    </button>
   </div>
 </template>
