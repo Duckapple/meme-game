@@ -279,7 +279,7 @@ onUnmounted(() => {
   </div>
   <span
     v-if="timerNow"
-    class="absolute scale-[300%] right-16 top-16 z-30 2xl:right-1/4 text-3xl text-shadow"
+    class="absolute scale-[300%] right-16 top-16 z-30 2xl:right-1/4 text-3xl text-white text-shadow"
   >
     {{ Math.max(0, state.timerEnd - timerNow) }}
   </span>

@@ -99,7 +99,6 @@ function onMessage(evt: MessageEvent | Event) {
       };
     }
     handleCardUpdate(m.cardUpdate);
-    console.log(m.moveState);
     if (m.moveState !== undefined) {
       moveState.value = m.moveState;
     }
