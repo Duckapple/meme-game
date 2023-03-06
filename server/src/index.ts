@@ -362,22 +362,9 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
     if (m.userID === UUID) {
       sendOnSocket(socket, response);
     } else {
-      socket.send(
-        JSON.stringify({ ...msg, state: convertGameState(state, name) })
-      );
+      sendOnSocket(socket, { ...msg, state: convertGameState(state, name) });
     }
   }
-
-  // room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
-
-  // if (isEndOfRound(room.state)) {
-  //   const msg: UpdateRoomResponse = {
-  //     type: MessageType.UPDATE_ROOM,
-  //     update: "Round ended, calculating scores...",
-  //   };
-  //   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
-  //   // setTimeout(() => handleEndOfRound(room), 3000);
-  // }
 }
 
 function handleVote(ws: WS.WebSocket, m: VoteMessage) {
@@ -437,62 +424,6 @@ function handleDoneVoting(ws: WS.WebSocket, m: DoneVotingMessage) {
   }
   room.players.forEach(({ socket }) => sendOnSocket(socket, update));
 }
-
-// function handleEndOfRound(room: Room) {
-//   if (!room.state) return;
-
-//   const points = room.state.playerBoards.map(({ score, playerName }) => ({
-//     score: -score,
-//     playerName,
-//   }));
-
-//   endRound(room.state, room.settings);
-
-//   points.forEach((point, i) => {
-//     point.score += room.state?.playerBoards[i].score ?? -point.score;
-//   });
-
-//   points.sort((a, b) => b.score - a.score);
-
-//   const msg: UpdateRoomResponse = {
-//     type: MessageType.UPDATE_ROOM,
-//     state: room.state,
-//     update: points
-//       .map(
-//         ({ playerName, score }) =>
-//           `${playerName}: ${score > 0 ? "+" : ""}${score} points`
-//       )
-//       .join(", "),
-//   };
-
-//   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
-
-//   if (isEndOfGame(room.state)) {
-//     const msg: UpdateRoomResponse = {
-//       type: MessageType.UPDATE_ROOM,
-//       update: "Game ended, calculating final scores...",
-//       state: {
-//         ...room.state,
-//         currentPlayer: -1,
-//       },
-//     };
-//     room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
-//     setTimeout(() => {
-//       handleEndOfGame(room);
-//     }, 3000);
-//   }
-// }
-
-// function handleEndOfGame(room: Room) {
-//   if (!room.state) return;
-//   const { state, standings } = endGame(room.state, room.settings);
-//   const msg: EndGameResponse = {
-//     type: MessageType.END_GAME,
-//     state,
-//     standings,
-//   };
-//   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
-// }
 
 function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
   const res = ensurePlayerAndRoom(ws, m);

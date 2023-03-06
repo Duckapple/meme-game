@@ -101,6 +101,36 @@ const updateIncomingMove = <K extends keyof Move>(key: K, value: Move[K]) => {
   incomingMove.value[key] = value;
 };
 
+const onArrow = (e: KeyboardEvent) => {
+  if (props.state.phase === "vote") {
+    if (["a", "d", "ArrowRight", "ArrowLeft", " "].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      switch (e.key) {
+        case "a":
+        case "ArrowRight":
+          currentCard.value = (currentCard.value + 1) % props.players.length;
+          return;
+        case "d":
+        case "ArrowLeft":
+          currentCard.value =
+            (currentCard.value > 0 ? currentCard.value : props.players.length) -
+            1;
+          return;
+        case " ":
+          const play = props.state.plays[currentCard.value];
+          if (!play || play === "HIDDEN") return;
+          play.player !== props.username && makeLike(currentCard.value);
+          return;
+      }
+      return;
+    }
+  }
+  console.log(e.key);
+  // ArrowRight | ArrowLeft | " "
+  // if (e.key)
+};
+
 const moveLegal = computed(
   () =>
     (props.settings.canOmit.top || incomingMove.value?.top) &&
@@ -119,9 +149,13 @@ onMounted(() => {
   timerIntervalHandle.value = setInterval(() => {
     timerNow.value = Math.round(new Date().getTime() / 1000);
   }, 250) as unknown as number; // Typing is Node rather than browser, huh
+  window.addEventListener("keydown", onArrow);
+  console.log("Game mounted!");
 });
 onUnmounted(() => {
   timerIntervalHandle.value && clearInterval(timerIntervalHandle.value);
+  window.removeEventListener("keydown", onArrow);
+  console.log("Game unmounted!");
 });
 </script>
 
@@ -234,11 +268,11 @@ onUnmounted(() => {
       </button>
       <button
         v-if="play && play != 'HIDDEN' && play.player !== username"
-        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4"
+        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4 text-shadow"
         :class="{ 'scale-[500%]': !likeState[i] }"
         @click="makeLike(i)"
       >
-        🖤
+        🤍
       </button>
       <div
         v-if="play && play != 'HIDDEN' && play.player === username"
