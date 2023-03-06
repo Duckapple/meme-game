@@ -3,6 +3,7 @@ const { pick, shuffle } = lodash;
 import {
   Blank,
   EndGameResponse,
+  FullCard,
   GameSettings,
   GameState,
   GameStyle,
@@ -18,6 +19,7 @@ import { refresh, toptexts, bottomtexts, visuals } from "./api";
 import _ from "lodash";
 import log from "./log";
 import { sendOnSocket } from "./utils";
+import { randomInt } from "crypto";
 
 export function createSettings(): GameSettings {
   return {
@@ -39,8 +41,18 @@ export function createSettings(): GameSettings {
     },
     pointCount: "votes",
     imageMode: "stretch",
-    blanks: 0.05,
+    blanks: 5,
   };
+}
+
+function maybeTakeBlanks(amount: number, percentage: number, pile: FullCard[]) {
+  let blanks = 0;
+  let actual = 0;
+  for (let i = 0; i < amount; i++) {
+    if (randomInt(0, 100) < percentage) blanks++;
+    else actual++;
+  }
+  return [...Array(blanks).fill({ id: -1 }), ...pile.splice(0, actual)];
 }
 
 export async function createInternalGameState(
@@ -49,18 +61,8 @@ export async function createInternalGameState(
 ): Promise<InternalGameState> {
   await refresh();
   const piles: InternalGameState["piles"] = {
-    top: shuffle([
-      ...toptexts,
-      ...Array(Math.floor(toptexts.length * (settings.blanks ?? 0))).fill({
-        id: -1,
-      } satisfies Blank),
-    ]),
-    bottom: shuffle([
-      ...bottomtexts,
-      ...Array(Math.floor(bottomtexts.length * (settings.blanks ?? 0))).fill({
-        id: -1,
-      } satisfies Blank),
-    ]),
+    top: shuffle(toptexts),
+    bottom: shuffle(bottomtexts),
     visuals: shuffle(visuals),
   };
 
@@ -82,8 +84,8 @@ export async function createInternalGameState(
     votes: players.map(() => new Set()),
     phase: "move",
     hands: players.map(() => ({
-      top: piles.top.splice(0, settings.handSize),
-      bottom: piles.bottom.splice(0, settings.handSize),
+      top: maybeTakeBlanks(settings.handSize, settings.blanks, piles.top),
+      bottom: maybeTakeBlanks(settings.handSize, settings.blanks, piles.bottom),
     })),
     visual: piles.visuals.splice(0, 1)[0].filename,
     piles,
@@ -140,9 +142,20 @@ export function setNextTurn(
   state.hands = state.hands.map(({ top, bottom }) => ({
     bottom: [
       ...bottom,
-      ...state.piles.bottom.splice(0, settings.handSize - bottom.length),
+      ...maybeTakeBlanks(
+        settings.handSize - bottom.length,
+        settings.blanks,
+        state.piles.bottom
+      ),
     ],
-    top: [...top, ...state.piles.top.splice(0, settings.handSize - top.length)],
+    top: [
+      ...top,
+      ...maybeTakeBlanks(
+        settings.handSize - top.length,
+        settings.blanks,
+        state.piles.top
+      ),
+    ],
   }));
   if (state.currentTzar !== -1)
     state.currentTzar = (state.currentTzar + 1) % state.plays.length;

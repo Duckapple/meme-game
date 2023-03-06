@@ -324,7 +324,7 @@ const blankHighlit =
         v-if="play && play != 'HIDDEN' && play.player === username"
         class="absolute flex justify-center items-center inset-auto z-10 text-4xl md:text-8xl font-[Impacto] select-none"
       >
-        <span class="p-6 backdrop-blur backdrop-brightness-75"
+        <span class="p-6 text-white backdrop-blur backdrop-brightness-75"
           >This is your meme!</span
         >
       </div>

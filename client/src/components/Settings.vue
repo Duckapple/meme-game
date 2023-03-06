@@ -194,14 +194,20 @@ const inputClass = "bg-transparent w-10 text-end";
   <div>
     <span>Blanks percentage: </span
     ><input
+      v-if="isCreator"
       :class="inputClass.replace('w-10', '')"
-      class="w-16"
-      :value="(settings.blanks ?? 0) * 100"
+      class="w-32 h-4"
+      type="range"
+      min="0"
+      max="100"
+      step="1"
+      :value="settings.blanks ?? 0"
       @input="(e) => {
         if (parse(e))
-            settings.blanks = parse(e) as number / 100;
+            settings.blanks = parse(e) as number;
       }"
-    />%
+    />
+    <span class="w-6">({{ settings.blanks }}%)</span>
   </div>
 </template>
 
