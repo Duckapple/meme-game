@@ -61,14 +61,16 @@ const makeLike = (i: number) => {
 };
 
 const incomingMove = ref<Partial<Move>>({ player: props.username });
+const prevPhase = ref<GameState["phase"]>(props.state.phase);
 
 const currentCard = ref(0);
 
 watch(props, (p) => {
-  if (p.moveState === null) {
+  if (prevPhase.value !== p.state.phase) {
     incomingMove.value = { player: p.username };
     likeState.value = props.players.map(() => false);
     currentCard.value = 0;
+    prevPhase.value = p.state.phase;
   }
 });
 
@@ -262,19 +264,35 @@ onUnmounted(() => {
     </button>
   </div>
   <div
-    v-if="state.phase === 'standings' && props.state.visual"
-    class="absolute inset-0 backdrop-blur"
+    v-if="state.visual"
+    class="absolute inset-0 p-8 transition-[opacity transform] flex flex-col items-center justify-center w-full h-full duration-500 overflow-x-hidden overflow-y-scroll"
+    :class="{ 'opacity-0 scale-0': state.phase !== 'standings' }"
   >
-    <div v-for="([move, pl, votes], i) in state.standings" class="relative">
+    <div
+      v-if="state.standings"
+      v-for="([move, pl, votes], i) in state.standings"
+      class="relative"
+    >
       <Meme
         :bottom="move?.bottom"
         :top="move?.top"
-        :visual="props.state.visual"
-        :image-mode="props.settings.imageMode"
+        :visual="state.visual"
+        :image-mode="settings.imageMode"
       />
       <div class="flex justify-center">
-        <span class="text-4xl"> {{ move?.player }} - {{ votes }} votes </span>
+        <span class="text-4xl">
+          {{ move?.player }} - {{ votes }} votes<span
+            v-if="!state.hasAnyoneWon"
+          >
+            - {{ state.points[pl] }} points</span
+          >
+        </span>
       </div>
+      <span
+        v-if="votes === state.standings[0][2]"
+        class="absolute text-9xl right-4 bottom-6 rotate-12"
+        >🏆</span
+      >
     </div>
   </div>
   <span

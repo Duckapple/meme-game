@@ -46,6 +46,7 @@ export interface GameState {
   points: number[];
   /** Ordered list of tuples of the move, player index, and the number of points */
   standings?: [Move | null, number, number][];
+  hasAnyoneWon?: boolean;
   timerEnd: number;
   rounds: number;
 }
@@ -72,3 +73,10 @@ export type Tuple<T, N extends number> = number extends N
 type _TupleOf<T, N extends number, R extends unknown[]> = R["length"] extends N
   ? R
   : _TupleOf<T, N, [T, ...R]>;
+
+type PlayerName = string;
+export type Standing = `${number}st` | `${number}nd` | `${number}rd`;
+export type EndStandings = Record<
+  Standing,
+  { players: PlayerName[]; standing: number }
+>;

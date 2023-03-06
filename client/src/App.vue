@@ -112,6 +112,7 @@ function onMessage(evt: MessageEvent | Event) {
   } else if (m.type === MessageType.END_STANDINGS) {
     stopConfetti();
     standings.value = undefined;
+    roomDetails.value && (roomDetails.value.state = undefined);
     roomDetails.value = undefined;
     hand.value = undefined;
     location.hash = "";

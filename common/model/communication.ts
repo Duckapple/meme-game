@@ -8,6 +8,8 @@ import {
   MoveState,
   RoomDetails,
   Visual,
+  Standing,
+  EndStandings,
 } from ".";
 export type Message =
   | AssignUUIDMessage
@@ -20,7 +22,8 @@ export type Message =
   | UpdateSettingsMessage
   | EndStandingsMessage
   | LookupMessage
-  | VoteMessage;
+  | VoteMessage
+  | AdminMergeStateMessage;
 
 export enum MessageType {
   CREATE_ROOM = "CREATE_ROOM",
@@ -38,46 +41,55 @@ export enum MessageType {
   END_STANDINGS = "END_STANDINGS",
   LOOKUP = "LOOKUP",
   VOTE = "VOTE",
+  ADMIN_MERGE_STATE = "ADMIN_MERGE_STATE",
 }
 
 type UUID = string;
-export type UserAndRoom = { userID: UUID; roomID: string };
+export type WithRoom = { roomID: string };
+export type WithUser = { userID: UUID };
+export type WithAdminOverride = { adminKey: string };
 export type AssignUUIDMessage = {
   type: MessageType.ASSIGN_UUID;
   userID?: UUID | null;
   roomID?: string | null;
 };
-export type CreateRoomMessage = {
+export type CreateRoomMessage = WithUser & {
   type: MessageType.CREATE_ROOM;
-  userID: UUID;
   username: string;
   roomID?: string;
 };
-export type JoinRoomMessage = UserAndRoom & {
-  type: MessageType.JOIN_ROOM;
-  username: string;
-};
-export type UpdateSettingsMessage = UserAndRoom & {
-  type: MessageType.UPDATE_SETTINGS;
-  settings: GameSettings;
-};
-export type RearrangePlayersMessage = UserAndRoom & {
-  type: MessageType.REARRANGE_PLAYERS;
-  players: string[];
-};
-export type BeginMessage = UserAndRoom & {
-  type: MessageType.BEGIN;
-};
-export type MakeMoveMessage = UserAndRoom & {
-  type: MessageType.MAKE_MOVE;
-  move: Partial<Omit<Move, "player">>;
-};
-export type PickWinnerMessage = UserAndRoom & {
-  type: MessageType.PICK_WINNER;
-};
-export type EndStandingsMessage = UserAndRoom & {
-  type: MessageType.END_STANDINGS;
-};
+export type JoinRoomMessage = WithUser &
+  WithRoom & {
+    type: MessageType.JOIN_ROOM;
+    username: string;
+  };
+export type UpdateSettingsMessage = WithUser &
+  WithRoom & {
+    type: MessageType.UPDATE_SETTINGS;
+    settings: GameSettings;
+  };
+export type RearrangePlayersMessage = WithUser &
+  WithRoom & {
+    type: MessageType.REARRANGE_PLAYERS;
+    players: string[];
+  };
+export type BeginMessage = WithUser &
+  WithRoom & {
+    type: MessageType.BEGIN;
+  };
+export type MakeMoveMessage = WithUser &
+  WithRoom & {
+    type: MessageType.MAKE_MOVE;
+    move: Partial<Omit<Move, "player">>;
+  };
+export type PickWinnerMessage = WithUser &
+  WithRoom & {
+    type: MessageType.PICK_WINNER;
+  };
+export type EndStandingsMessage = WithUser &
+  WithRoom & {
+    type: MessageType.END_STANDINGS;
+  };
 export type LookupMessage = {
   type: MessageType.LOOKUP;
 } & (
@@ -90,11 +102,18 @@ export type LookupMessage = {
       data: Partial<Visual>;
     }
 );
-export type VoteMessage = UserAndRoom & {
-  type: MessageType.VOTE;
-  playIndex: number;
-  voteState: boolean;
-};
+export type VoteMessage = WithUser &
+  WithRoom & {
+    type: MessageType.VOTE;
+    playIndex: number;
+    voteState: boolean;
+  };
+export type AdminMergeStateMessage = WithRoom &
+  WithAdminOverride & {
+    type: MessageType.ADMIN_MERGE_STATE;
+    state: any;
+    update?: string;
+  };
 
 export type MessageResponse =
   | CreateRoomResponse
@@ -131,7 +150,7 @@ export type AssignUUIDResponse = {
 export type EndGameResponse = {
   type: MessageType.END_GAME;
   state: GameState;
-  standings: string[];
+  standings: EndStandings;
 };
 export type EndStandingsResponse = {
   type: MessageType.END_STANDINGS;

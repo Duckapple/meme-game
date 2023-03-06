@@ -24,7 +24,10 @@ import {
   Move,
   GameStyle,
   VoteMessage,
-  UserAndRoom,
+  WithUser,
+  WithRoom,
+  WithAdminOverride,
+  AdminMergeStateMessage,
 } from "./model";
 import {
   convertGameState,
@@ -40,6 +43,7 @@ import {
   createUUID,
   Room,
   isGameInProgress,
+  InternalGameState,
 } from "./state";
 import log from "./log";
 import { exit } from "process";
@@ -60,7 +64,8 @@ const ensureEnv = (key: string): string => {
 };
 
 const visual_cdn = ensureEnv("VISUAL_CDN");
-// const jwt_secret = ensureEnv("JWT_SECRET");
+const apiOverride = process.env.API_OVERRIDE;
+const hasOverride = !!apiOverride;
 
 export function sendError(ws: WS.WebSocket, error: string, data?: unknown) {
   const err: ErrorResponse = {
@@ -72,6 +77,12 @@ export function sendError(ws: WS.WebSocket, error: string, data?: unknown) {
   return sendOnSocket(ws, err);
 }
 
+function validateOverride(ws: WS.WebSocket, msg: WithAdminOverride) {
+  if (!hasOverride) return sendError(ws, "API override not set"), false;
+  // Do not inform the user they are wrong or not
+  return msg.adminKey === apiOverride;
+}
+
 type PlayerAndRoom = {
   player: Player;
   playerIndex: number;
@@ -80,7 +91,7 @@ type PlayerAndRoom = {
 /** This ensures that room and player are defined, sending errors if not */
 function ensurePlayerAndRoom(
   ws: WS.WebSocket,
-  m: UserAndRoom
+  m: WithUser & WithRoom
 ): false | PlayerAndRoom {
   const room = rooms.get(m.roomID);
 
@@ -444,12 +455,11 @@ function handleVote(ws: WS.WebSocket, m: VoteMessage) {
 // }
 
 function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
-  const room = rooms.get(m.roomID);
+  const res = ensurePlayerAndRoom(ws, m);
+  if (!res) return;
+  const { room, player } = res;
 
-  if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return sendError(ws, "Incorrect room ID");
-
-  if (!m.userID || room.creator.UUID !== m.userID)
+  if (room.creator.UUID !== player.UUID)
     return sendError(ws, "Invalid user ID");
 
   room.settings = m.settings;
@@ -464,12 +474,11 @@ function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
 }
 
 function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
-  const room = rooms.get(m.roomID);
+  const res = ensurePlayerAndRoom(ws, m);
+  if (!res) return;
+  const { room, player } = res;
 
-  if (!m.roomID || !rooms.has(m.roomID) || !room)
-    return sendError(ws, "Incorrect room ID");
-
-  if (!m.userID || room.creator.UUID !== m.userID)
+  if (room.creator.UUID !== player.UUID)
     return sendError(ws, "Invalid user ID");
 
   const msg: EndStandingsResponse = {
@@ -550,6 +559,27 @@ function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
   }
 }
 
+async function handleAdminMergeState(
+  ws: WS.WebSocket,
+  m: AdminMergeStateMessage
+) {
+  const room = rooms.get(m.roomID);
+  if (!room) return sendError(ws, "Invalid Room ID");
+  const state = room.state;
+  if (!state)
+    return sendError(ws, "Cannot change state on non-initialized state");
+  for (const [k, v] of Object.entries<any>(m.state)) {
+    (state as any)[k] = v;
+  }
+  const res: UpdateRoomResponse = {
+    type: MessageType.UPDATE_ROOM,
+    update: m.update || "Room updated",
+  };
+  room.players.forEach(({ socket, name }) =>
+    sendOnSocket(socket, { ...res, state: convertGameState(state, name) })
+  );
+}
+
 app.ws("/ws", (ws) => {
   const timer = setInterval(() => {
     ws.ping(undefined, undefined, (error) => {
@@ -586,6 +616,9 @@ app.ws("/ws", (ws) => {
       handleLookup(ws, m);
     } else if (m.type === MessageType.VOTE) {
       handleVote(ws, m);
+    } else if (m.type === MessageType.ADMIN_MERGE_STATE) {
+      if (!validateOverride(ws, m)) return;
+      handleAdminMergeState(ws, m);
     } else {
       log(`Unknown message '${msg}'`);
     }

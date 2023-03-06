@@ -8,6 +8,7 @@ import {
   Hidden,
   MessageType,
   Move,
+  Standing,
   UpdateRoomResponse,
   Visual,
 } from "./model";
@@ -103,6 +104,7 @@ export function convertGameState(
       "timerEnd",
       "standings",
       "rounds",
+      "hasAnyoneWon",
     ]),
   };
 }
@@ -184,19 +186,35 @@ function hasAnyoneWon(
   }
 }
 
+function standingize(n: number): Standing {
+  if (n % 10 === 1) return `${n}st`;
+  if (n % 10 === 2) return `${n}nd`;
+  return `${n}rd`;
+}
+
 function getStanding(
   state: InternalGameState,
   settings: GameSettings,
   players: Player[]
-): string[] {
+): EndGameResponse["standings"] {
   switch (settings.winCondition.type) {
     case "points":
     case "rounds":
-      const playersIndex = players.map((p, i) => ({ p, i }));
-      playersIndex.sort(
-        ({ i: i1 }, { i: i2 }) => state.points[i2] - state.points[i1]
-      );
-      return playersIndex.map(({ p: { name } }) => name);
+      const grouped = state.points.map((p, i) => [p, i]);
+      grouped.sort(([p1], [p2]) => p2 - p1);
+      let currentPoints = Infinity;
+      let currentStand = 0;
+      const res: EndGameResponse["standings"] = {};
+      for (const [points, i] of grouped) {
+        if (points < currentPoints) {
+          currentStand++;
+          currentPoints = points;
+        }
+        const st = standingize(currentStand);
+        if (!res[st]) res[st] = { standing: currentStand, players: [] };
+        res[st].players.push(players[i].name);
+      }
+      return res;
     default:
       err(settings.winCondition.type);
   }
@@ -216,16 +234,20 @@ export function setStandings(
     ])
     .sort(([, , a], [, , b]) => b - a);
   state.standings = results;
-  state.points[results[0][1]] += 1;
+  const winnerVotes = results[0][2];
+  results
+    .filter(([, , x]) => x === winnerVotes)
+    .forEach(([, i]) => (state.points[i] += 1));
   state.plays = state.plays.map(() => null);
   state.shuffle = state.plays.map((_, i) => i);
+  state.hasAnyoneWon = hasAnyoneWon(state, settings);
 
   state.timerEnd = Math.round(
     (new Date().getTime() + settings.maxTimer.standings) / 1000 + 1
   );
   stopTimeout(state);
   state.timeout = setTimeout(() => {
-    if (hasAnyoneWon(state, settings)) {
+    if (state.hasAnyoneWon) {
       const standingsMsg: EndGameResponse = {
         type: MessageType.END_GAME,
         state: convertGameState(state),
