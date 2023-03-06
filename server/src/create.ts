@@ -1,6 +1,7 @@
 import lodash from "lodash";
 const { pick, shuffle } = lodash;
 import {
+  Blank,
   EndGameResponse,
   GameSettings,
   GameState,
@@ -38,6 +39,7 @@ export function createSettings(): GameSettings {
     },
     pointCount: "votes",
     imageMode: "stretch",
+    blanks: 0.05,
   };
 }
 
@@ -47,8 +49,18 @@ export async function createInternalGameState(
 ): Promise<InternalGameState> {
   await refresh();
   const piles: InternalGameState["piles"] = {
-    top: shuffle(toptexts),
-    bottom: shuffle(bottomtexts),
+    top: shuffle([
+      ...toptexts,
+      ...Array(Math.floor(toptexts.length * (settings.blanks ?? 0))).fill({
+        id: -1,
+      } satisfies Blank),
+    ]),
+    bottom: shuffle([
+      ...bottomtexts,
+      ...Array(Math.floor(bottomtexts.length * (settings.blanks ?? 0))).fill({
+        id: -1,
+      } satisfies Blank),
+    ]),
     visuals: shuffle(visuals),
   };
 

@@ -37,6 +37,7 @@ const textForOmitOptions = computed(() => {
   if (bottom) return "Can only omit bottom text";
   return "Cannot omit text";
 });
+const inputClass = "bg-transparent w-10 text-end";
 </script>
 
 <template>
@@ -45,6 +46,7 @@ const textForOmitOptions = computed(() => {
       <td>
         <span>Hand Size:</span>
         <input
+          :class="inputClass"
           v-if="isCreator"
           :value="settings.handSize"
           @input="(e) => setKey('handSize', e)"
@@ -56,6 +58,7 @@ const textForOmitOptions = computed(() => {
       <td>
         <span>Discards per round:</span>
         <input
+          :class="inputClass"
           v-if="isCreator"
           :value="settings.discardsPerRound"
           @input="(e) => setKey('discardsPerRound', e)"
@@ -98,6 +101,7 @@ const textForOmitOptions = computed(() => {
   <div class="flex items-center pt-4" v-if="isCreator">
     <label for="toptext">Can omit top text?</label>
     <input
+      :class="inputClass"
       type="checkbox"
       name="toptext"
       id="toptext"
@@ -107,6 +111,7 @@ const textForOmitOptions = computed(() => {
   <div class="flex items-center pt-2" v-if="isCreator">
     <label for="bottomtext">Can omit bottom text?</label>
     <input
+      :class="inputClass"
       type="checkbox"
       name="bottomtext"
       id="bottomtext"
@@ -132,6 +137,7 @@ const textForOmitOptions = computed(() => {
     }}</span>
 
     <input
+      :class="inputClass"
       v-if="isCreator"
       name="win-n"
       id="win-n"
@@ -151,6 +157,7 @@ const textForOmitOptions = computed(() => {
     <div>
       <span>Pick move timer: </span>
       <input
+        :class="inputClass"
         v-if="isCreator"
         :value="settings.maxTimer.move / 1000"
         name="timer-move"
@@ -162,6 +169,7 @@ const textForOmitOptions = computed(() => {
     <div>
       <span>Vote timer: </span>
       <input
+        :class="inputClass"
         v-if="isCreator"
         :value="settings.maxTimer.vote / 1000"
         name="timer-vote"
@@ -173,6 +181,7 @@ const textForOmitOptions = computed(() => {
     <div>
       <span>Standings timer: </span>
       <input
+        :class="inputClass"
         v-if="isCreator"
         :value="settings.maxTimer.standings / 1000"
         name="timer-standings"
@@ -181,6 +190,18 @@ const textForOmitOptions = computed(() => {
       />
       <span v-if="!isCreator">{{ settings.maxTimer.standings / 1000 }}</span>
     </div>
+  </div>
+  <div>
+    <span>Blanks percentage: </span
+    ><input
+      :class="inputClass.replace('w-10', '')"
+      class="w-16"
+      :value="(settings.blanks ?? 0) * 100"
+      @input="(e) => {
+        if (parse(e))
+            settings.blanks = parse(e) as number / 100;
+      }"
+    />%
   </div>
 </template>
 
@@ -205,8 +226,5 @@ td > span {
 }
 td > span.mr-0 {
   margin-right: 0;
-}
-input {
-  @apply bg-transparent w-10 text-end;
 }
 </style>

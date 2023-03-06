@@ -312,7 +312,10 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
     );
     if (topCardIndex === -1)
       return sendError(ws, "You do not have the top card you tried to play!");
-    move.top = state.hands[playerIndex].top[topCardIndex];
+    move.top = { ...state.hands[playerIndex].top[topCardIndex] };
+    if (mt.id === -1 && !mt.text)
+      return sendError(ws, "Top card is blank, but you didn't provide text!");
+    if (mt.id === -1) move.top.text = mt.text ?? "";
     cleanup.push(() => state.hands[playerIndex].top.splice(topCardIndex, 1));
   }
   const mb = m.move.bottom;
@@ -325,7 +328,13 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
         ws,
         "You do not have the bottom card you tried to play!"
       );
-    move.bottom = state.hands[playerIndex].bottom[bottomCardIndex];
+    move.bottom = { ...state.hands[playerIndex].bottom[bottomCardIndex] };
+    if (mb.id === -1 && !mb.text)
+      return sendError(
+        ws,
+        "Bottom card is blank, but you didn't provide text!"
+      );
+    if (mb.id === -1) move.bottom.text = mb.text ?? "";
     cleanup.push(() =>
       state.hands[playerIndex].bottom.splice(bottomCardIndex, 1)
     );

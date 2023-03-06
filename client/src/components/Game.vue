@@ -8,6 +8,7 @@ import type {
   FullCard,
   Move,
   MoveState,
+  Blank,
 } from "../model";
 
 const narrowAxis = ref<"w-full" | "h-full">(
@@ -26,7 +27,7 @@ window.addEventListener("resize", () => {
 
 const props = defineProps<{
   state: GameState;
-  hand: Record<"top" | "bottom", FullCard[]>;
+  hand: Record<"top" | "bottom", (FullCard | Blank)[]>;
   players: string[];
   username: string;
   creator: string;
@@ -66,12 +67,17 @@ const prevPhase = ref<GameState["phase"]>(props.state.phase);
 
 const currentCard = ref(0);
 
+const top = ref("");
+const bottom = ref("");
+
 watch(props, (p) => {
   if (prevPhase.value !== p.state.phase) {
     incomingMove.value = { player: p.username };
     likeState.value = props.players.map(() => false);
     currentCard.value = 0;
     prevPhase.value = p.state.phase;
+    top.value = "";
+    bottom.value = "";
   }
 });
 
@@ -93,6 +99,21 @@ const touchSwipe = (e: TouchEvent) => {
     currentCard.value = (cc > 0 ? cc : props.players.length) - 1;
   }
   touchMoved.value = true;
+};
+
+const onMakeMoveWithBlanks: MakeMoveFunction = (incomingMove) => {
+  const actualMove = {
+    top:
+      incomingMove.top?.id === -1
+        ? { id: -1, text: top.value }
+        : incomingMove.top,
+    bottom:
+      incomingMove.bottom?.id === -1
+        ? { id: -1, text: bottom.value }
+        : incomingMove.bottom,
+    player: incomingMove.player,
+  };
+  props.onMakeMove(actualMove);
 };
 
 const updateIncomingMove = <K extends keyof Move>(key: K, value: Move[K]) => {
@@ -127,8 +148,6 @@ const onArrow = (e: KeyboardEvent) => {
     }
   }
   console.log(e.key);
-  // ArrowRight | ArrowLeft | " "
-  // if (e.key)
 };
 
 const moveLegal = computed(
@@ -172,13 +191,43 @@ onUnmounted(() => {
           '-translate-y-2 bg-gray-100 dark:bg-gray-700':
             top === incomingMove?.top,
           'bg-gray-50 dark:bg-gray-800': top !== incomingMove?.top,
+          'bg-gradient-to-br from-gray-700 to-sky-700':
+            top?.id === -1 && top !== incomingMove?.top,
+          'bg-gradient-to-br from-gray-600 to-sky-600':
+            top?.id === -1 && top === incomingMove?.top,
           disabled: isTzar || moveState,
         }"
         @click="() => !(isTzar || moveState) && updateIncomingMove('top', top)"
       >
-        <span>{{ top.text }}</span>
+        <span>{{ top.text ?? "________" }}</span>
         <span class="absolute text-xs right-2 bottom-2">{{ top.id }}</span>
       </div>
+    </div>
+    <div class="relative w-[48rem] h-[48rem] flex justify-center items-center">
+      <Meme
+        v-if="props.state.visual"
+        :bottom="
+          incomingMove?.bottom?.id === -1
+            ? { text: bottom }
+            : incomingMove?.bottom
+        "
+        :top="incomingMove?.top?.id === -1 ? { text: top } : incomingMove?.top"
+        :visual="props.state.visual"
+        :image-mode="props.settings.imageMode"
+        class="max-w-[48rem] max-h-[48rem]"
+      />
+      <input
+        v-if="incomingMove.top?.id === -1"
+        class="absolute text-4xl text-center bg-transparent text-transparent top-4 font-[Impacto] w-[90%] border-b-2"
+        :value="top"
+        @input="(evt) => (top = (evt.target as any)?.value ?? '')"
+      />
+      <input
+        v-if="incomingMove.bottom?.id === -1"
+        class="absolute text-4xl text-center bg-transparent text-transparent bottom-4 font-[Impacto] w-[90%] border-b-2"
+        :value="bottom"
+        @input="(evt) => (bottom = (evt.target as any)?.value ?? '')"
+      />
     </div>
     <div
       class="flex pt-4 space-x-2 overflow-x-auto overflow-y-visible min-h-[2rem]"
@@ -190,31 +239,28 @@ onUnmounted(() => {
           '-translate-y-2 bg-gray-100 dark:bg-gray-700':
             bottom === incomingMove?.bottom,
           'bg-gray-50 dark:bg-gray-800': bottom !== incomingMove?.bottom,
+          'bg-gradient-to-br from-gray-700 to-sky-700':
+            bottom?.id === -1 && bottom !== incomingMove?.bottom,
+          'bg-gradient-to-br from-gray-600 to-sky-600':
+            bottom?.id === -1 && bottom === incomingMove?.bottom,
           disabled: isTzar || moveState,
         }"
         @click="
           () => !(isTzar || moveState) && updateIncomingMove('bottom', bottom)
         "
       >
-        <span class="break-words">{{ bottom.text }}</span>
+        <span class="break-words">{{ bottom.text ?? "________" }}</span>
         <span class="absolute text-xs right-2 bottom-2">{{ bottom.id }}</span>
       </div>
-    </div>
-    <div class="w-[48rem] h-[48rem] flex justify-center items-center">
-      <Meme
-        v-if="props.state.visual"
-        :bottom="incomingMove?.bottom"
-        :top="incomingMove?.top"
-        :visual="props.state.visual"
-        :image-mode="props.settings.imageMode"
-        class="max-w-[48rem] max-h-[48rem]"
-      />
     </div>
     <button
       :class="{ disabled: isTzar || moveState }"
       class="btn"
       @click="
-        () => !(isTzar || moveState) && moveLegal && onMakeMove(incomingMove)
+        () =>
+          !(isTzar || moveState) &&
+          moveLegal &&
+          onMakeMoveWithBlanks(incomingMove)
       "
     >
       <span class="block px-8 py-4">{{
@@ -341,7 +387,7 @@ onUnmounted(() => {
       </div>
       <span
         v-if="votes === state.standings[0][2]"
-        class="absolute text-9xl right-4 bottom-6 rotate-12"
+        class="absolute select-none text-9xl right-4 bottom-6 rotate-12"
         >🏆</span
       >
     </div>

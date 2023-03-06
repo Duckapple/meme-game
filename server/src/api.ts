@@ -16,22 +16,25 @@ export let visuals: Visual[];
 
 export let lastRefresh: number;
 
+type ApiMemeText = { id: number; memetext: string };
+
 export async function refresh() {
   if (!lastRefresh || lastRefresh + 1000 * 60 < +new Date()) {
     lastRefresh = +new Date();
     log("Refreshing content...");
     const toptextsText = await (await fetch(api + "/toptexts")).text();
 
-    toptexts = JSON.parse(toptextsText).map(
-      (x: { id: number; memetext: string }) => ({ id: x.id, text: x.memetext })
-    );
+    toptexts = (JSON.parse(toptextsText) as ApiMemeText[])
+      .map((x) => ({ id: x.id, text: x.memetext }))
+      .filter(({ text }) => text);
 
-    bottomtexts = JSON.parse(
-      await (await fetch(api + "/bottomtexts")).text()
-    ).map((x: { id: number; memetext: string }) => ({
-      id: x.id,
-      text: x.memetext,
-    }));
+    const bottomtextsText = await (await fetch(api + "/bottomtexts")).text();
+    bottomtexts = (JSON.parse(bottomtextsText) as ApiMemeText[])
+      .map((x) => ({
+        id: x.id,
+        text: x.memetext,
+      }))
+      .filter(({ text }) => text);
 
     visuals = JSON.parse(await (await fetch(api + "/visuals")).text());
   }

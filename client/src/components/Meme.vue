@@ -4,8 +4,8 @@ import type { GameSettings } from "../model";
 import { visual_cdn } from "../state";
 const props = defineProps<{
   visual: string;
-  top?: { text: string } | null;
-  bottom?: { text: string } | null;
+  top?: { text?: string } | null;
+  bottom?: { text?: string } | null;
   imageMode?: GameSettings["imageMode"];
 }>();
 
@@ -70,13 +70,13 @@ async function redraw() {
     props.imageMode === "scale" ? image.width * ratio : cvs.width;
   if (top) {
     ctx.strokeText(
-      top.text.toUpperCase(),
+      top.text?.toUpperCase() ?? "",
       cvs.width / 2,
       (1.5 * CANVAS_SIZE) / 20,
       textMaxWidth - CANVAS_SIZE / 20
     );
     ctx.fillText(
-      top.text.toUpperCase(),
+      top.text?.toUpperCase() ?? "",
       cvs.width / 2,
       (1.5 * CANVAS_SIZE) / 20,
       textMaxWidth - CANVAS_SIZE / 20
@@ -85,13 +85,13 @@ async function redraw() {
   const bottom = props.bottom;
   if (bottom) {
     ctx.strokeText(
-      bottom.text.toUpperCase(),
+      bottom.text?.toUpperCase() ?? "",
       cvs.width / 2,
       CANVAS_SIZE - (0.5 * CANVAS_SIZE) / 20,
       image.width * ratio - CANVAS_SIZE / 20
     );
     ctx.fillText(
-      bottom.text.toUpperCase(),
+      bottom.text?.toUpperCase() ?? "",
       cvs.width / 2,
       CANVAS_SIZE - (0.5 * CANVAS_SIZE) / 20,
       image.width * ratio - CANVAS_SIZE / 20

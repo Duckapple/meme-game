@@ -3,13 +3,14 @@ export * from "./communication";
 export type Hidden = "HIDDEN";
 
 export type Card = { id: number };
+export type Blank = { id: -1; text?: string };
 
 export type FullCard = Card & { text: string };
 export type Visual = { id: number; filename: string };
 
 export type AnonymousMove = {
-  top?: FullCard;
-  bottom?: FullCard;
+  top?: FullCard | Blank;
+  bottom?: FullCard | Blank;
 };
 
 export type Move = AnonymousMove & {
@@ -36,6 +37,7 @@ export interface GameSettings {
   pointCount: "votes" | "best";
   maxTimer: Record<GameState["phase"], number>;
   imageMode: "scale" | "stretch";
+  blanks?: number;
 }
 
 export interface GameState {
@@ -53,8 +55,8 @@ export interface GameState {
 }
 
 export interface CardUpdate {
-  top: FullCard[];
-  bottom: FullCard[];
+  top: (FullCard | Blank)[];
+  bottom: (FullCard | Blank)[];
   type: "add" | "replace";
 }
 

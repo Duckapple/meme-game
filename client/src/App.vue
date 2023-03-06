@@ -20,6 +20,7 @@ import {
   VoteMessage,
   EndStandings,
   DoneVotingMessage,
+  Blank,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -33,7 +34,7 @@ import { username, UUID, visual_cdn, roomDetails } from "./state";
 
 export type MakeMoveFunction = (args: Partial<Move>) => void;
 
-const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
+const hand = ref<undefined | Record<"top" | "bottom", (FullCard | Blank)[]>>({
   top: [],
   bottom: [],
 });
