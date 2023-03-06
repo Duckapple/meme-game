@@ -176,6 +176,10 @@ onUnmounted(() => {
   window.removeEventListener("keydown", onArrow);
   console.log("Game unmounted!");
 });
+const blank =
+  "bg-gradient-to-br from-gray-200 to-sky-200 dark:from-gray-700 dark:to-sky-700";
+const blankHighlit =
+  "bg-gradient-to-br from-gray-300 to-sky-300 dark:from-gray-600 dark:to-sky-600";
 </script>
 
 <template>
@@ -188,13 +192,11 @@ onUnmounted(() => {
         v-for="top in hand.top"
         class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
         :class="{
-          '-translate-y-2 bg-gray-100 dark:bg-gray-700':
+          '-translate-y-2 bg-gray-200 dark:bg-gray-700':
             top === incomingMove?.top,
           'bg-gray-50 dark:bg-gray-800': top !== incomingMove?.top,
-          'bg-gradient-to-br from-gray-700 to-sky-700':
-            top?.id === -1 && top !== incomingMove?.top,
-          'bg-gradient-to-br from-gray-600 to-sky-600':
-            top?.id === -1 && top === incomingMove?.top,
+          [blank]: top?.id === -1 && top !== incomingMove?.top,
+          [blankHighlit]: top?.id === -1 && top === incomingMove?.top,
           disabled: isTzar || moveState,
         }"
         @click="() => !(isTzar || moveState) && updateIncomingMove('top', top)"
@@ -236,13 +238,11 @@ onUnmounted(() => {
         v-for="bottom in hand.bottom"
         class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
         :class="{
-          '-translate-y-2 bg-gray-100 dark:bg-gray-700':
+          '-translate-y-2 bg-gray-200 dark:bg-gray-700':
             bottom === incomingMove?.bottom,
           'bg-gray-50 dark:bg-gray-800': bottom !== incomingMove?.bottom,
-          'bg-gradient-to-br from-gray-700 to-sky-700':
-            bottom?.id === -1 && bottom !== incomingMove?.bottom,
-          'bg-gradient-to-br from-gray-600 to-sky-600':
-            bottom?.id === -1 && bottom === incomingMove?.bottom,
+          [blank]: bottom?.id === -1 && bottom !== incomingMove?.bottom,
+          [blankHighlit]: bottom?.id === -1 && bottom === incomingMove?.bottom,
           disabled: isTzar || moveState,
         }"
         @click="
