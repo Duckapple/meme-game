@@ -33,6 +33,7 @@ const props = defineProps<{
   settings: GameSettings;
   onMakeMove: MakeMoveFunction;
   onMakeLike: (index: number, state: boolean) => void;
+  onDoneVoting: () => void;
   moveState?: MoveState | null;
 }>();
 
@@ -223,12 +224,22 @@ onUnmounted(() => {
       >
         Nothing to see here...
       </span>
-      <span
-        class="absolute transition-transform scale-0 select-none left-16 bottom-16 2xl:left-1/4"
+      <button
+        v-if="play && play != 'HIDDEN' && play.player !== username"
+        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4"
         :class="{ 'scale-[500%]': likeState[i] }"
+        @click="play.player !== username && makeLike(i)"
       >
         ❤️
-      </span>
+      </button>
+      <button
+        v-if="play && play != 'HIDDEN' && play.player !== username"
+        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4"
+        :class="{ 'scale-[500%]': !likeState[i] }"
+        @click="makeLike(i)"
+      >
+        🖤
+      </button>
       <div
         v-if="play && play != 'HIDDEN' && play.player === username"
         class="absolute flex justify-center items-center inset-auto z-10 text-4xl md:text-8xl font-[Impacto] select-none"
@@ -261,6 +272,12 @@ onUnmounted(() => {
       @click="() => (currentCard = (currentCard + 1) % players.length)"
     >
       &gt;
+    </button>
+    <button
+      class="absolute z-30 px-8 py-4 text-xl btn bottom-12 right-4 md:right-12"
+      @click="onDoneVoting()"
+    >
+      Done voting
     </button>
   </div>
   <div

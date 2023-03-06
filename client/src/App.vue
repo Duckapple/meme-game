@@ -18,6 +18,8 @@ import {
   MoveState,
   CardUpdate,
   VoteMessage,
+  EndStandings,
+  DoneVotingMessage,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -36,7 +38,7 @@ const hand = ref<undefined | Record<"top" | "bottom", FullCard[]>>({
   bottom: [],
 });
 const moveState = ref<MoveState | null>();
-const standings = ref<string[]>();
+const standings = ref<EndStandings>();
 
 const ERROR = "ERROR";
 
@@ -92,10 +94,12 @@ function onMessage(evt: MessageEvent | Event) {
       roomDetails.value = {
         ...roomDetails.value,
         ...omit(m, ["type", "newCards"]),
-        state: m.state && {
-          ...roomDetails.value.state,
-          ...m.state,
-        },
+        state: m.state
+          ? {
+              ...roomDetails.value.state,
+              ...m.state,
+            }
+          : roomDetails.value.state,
       };
     }
     handleCardUpdate(m.cardUpdate);
@@ -227,6 +231,16 @@ const onMakeLike = (playIndex: number, voteState: boolean) => {
   ws.value.send(JSON.stringify(msg));
 };
 
+const onDoneVoting = () => {
+  if (!roomDetails.value || !UUID.value) return;
+  const msg: DoneVotingMessage = {
+    type: MessageType.DONE_VOTING,
+    roomID: roomDetails.value.roomID,
+    userID: UUID.value,
+  };
+  ws.value.send(JSON.stringify(msg));
+};
+
 const onEndStandings = () => {
   if (!roomDetails.value || !UUID.value) return;
   const msg: EndStandingsMessage = {
@@ -259,6 +273,7 @@ const onEndStandings = () => {
       username,
       onMakeMove,
       onMakeLike,
+      onDoneVoting,
       moveState,
     }"
   />

@@ -23,6 +23,7 @@ export type Message =
   | EndStandingsMessage
   | LookupMessage
   | VoteMessage
+  | DoneVotingMessage
   | AdminMergeStateMessage;
 
 export enum MessageType {
@@ -41,6 +42,7 @@ export enum MessageType {
   END_STANDINGS = "END_STANDINGS",
   LOOKUP = "LOOKUP",
   VOTE = "VOTE",
+  DONE_VOTING = "DONE_VOTING",
   ADMIN_MERGE_STATE = "ADMIN_MERGE_STATE",
 }
 
@@ -107,6 +109,10 @@ export type VoteMessage = WithUser &
     type: MessageType.VOTE;
     playIndex: number;
     voteState: boolean;
+  };
+export type DoneVotingMessage = WithUser &
+  WithRoom & {
+    type: MessageType.DONE_VOTING;
   };
 export type AdminMergeStateMessage = WithRoom &
   WithAdminOverride & {

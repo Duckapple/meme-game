@@ -46,6 +46,7 @@ export interface GameState {
   points: number[];
   /** Ordered list of tuples of the move, player index, and the number of points */
   standings?: [Move | null, number, number][];
+  doneVoting?: boolean[];
   hasAnyoneWon?: boolean;
   timerEnd: number;
   rounds: number;

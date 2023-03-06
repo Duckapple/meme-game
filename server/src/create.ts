@@ -151,6 +151,7 @@ export function setTzar(
   state.plays = shuffle.map(([play]) => play);
   state.shuffle = shuffle.map(([, num]) => num);
   state.votes = players.map(() => new Set());
+  state.doneVoting = players.map(() => false);
   state.timerEnd = Math.round(
     (new Date().getTime() + settings.maxTimer.vote) / 1000 + 1
   );

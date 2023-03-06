@@ -28,11 +28,13 @@ import {
   WithRoom,
   WithAdminOverride,
   AdminMergeStateMessage,
+  DoneVotingMessage,
 } from "./model";
 import {
   convertGameState,
   createInternalGameState,
   createSettings,
+  setStandings,
   setTzar,
   stopTimeout,
 } from "./create";
@@ -398,6 +400,44 @@ function handleVote(ws: WS.WebSocket, m: VoteMessage) {
   }
 }
 
+function handleDoneVoting(ws: WS.WebSocket, m: DoneVotingMessage) {
+  const playerAndRoom = ensurePlayerAndRoom(ws, m);
+  if (!playerAndRoom) return;
+  const { room, playerIndex, player } = playerAndRoom;
+
+  const doneVotingState = room.state?.doneVoting;
+  if (room.state?.phase !== "vote" || !doneVotingState)
+    return sendError(ws, "Cannot be done voting when not in voting phase!");
+
+  doneVotingState[playerIndex] = true;
+
+  const doneVotingCount = doneVotingState.filter(Boolean).length;
+  const update: UpdateRoomResponse = {
+    type: MessageType.UPDATE_ROOM,
+    update: `${doneVotingCount} ha${
+      doneVotingCount === 1 ? "s" : "ve"
+    } voted to skip`,
+  };
+  // Skip forward if all vote to skip
+  if (doneVotingCount === doneVotingState.length) {
+    stopTimeout(room.state);
+    setStandings(room.state, room.settings, room.players);
+    const update: UpdateRoomResponse = {
+      type: MessageType.UPDATE_ROOM,
+      update: "Voting was skipped! Moving on to standings.",
+      state: convertGameState(room.state),
+      moveState: null,
+    };
+    room.players.forEach(({ socket }) => sendOnSocket(socket, update));
+    return;
+  }
+  // We do not notify anyone but this user if less than half are done
+  if (doneVotingCount < doneVotingState.length / 2) {
+    return sendOnSocket(player.socket, update);
+  }
+  room.players.forEach(({ socket }) => sendOnSocket(socket, update));
+}
+
 // function handleEndOfRound(room: Room) {
 //   if (!room.state) return;
 
@@ -616,6 +656,8 @@ app.ws("/ws", (ws) => {
       handleLookup(ws, m);
     } else if (m.type === MessageType.VOTE) {
       handleVote(ws, m);
+    } else if (m.type === MessageType.DONE_VOTING) {
+      handleDoneVoting(ws, m);
     } else if (m.type === MessageType.ADMIN_MERGE_STATE) {
       if (!validateOverride(ws, m)) return;
       handleAdminMergeState(ws, m);
