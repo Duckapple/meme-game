@@ -1,7 +1,10 @@
 import fetch from "node-fetch";
 import { exit } from "process";
+import z from "zod";
 import log from "./log";
 import type { FullCard, Visual } from "./model";
+import _ from "lodash";
+const { uniqBy, difference } = _;
 
 const api = process.env.MEME_API_URL;
 
@@ -10,32 +13,62 @@ if (!api) {
   exit();
 }
 
+const apiMemeText = z.object({
+  id: z.number(),
+  memetext: z.string(),
+});
+
+const visual = z.object({
+  id: z.number(),
+  filename: z.string(),
+});
+
 export let toptexts: FullCard[];
 export let bottomtexts: FullCard[];
 export let visuals: Visual[];
 
 export let lastRefresh: number;
 
-type ApiMemeText = { id: number; memetext: string };
-
 export async function refresh() {
   if (!lastRefresh || lastRefresh + 1000 * 60 < +new Date()) {
     lastRefresh = +new Date();
     log("Refreshing content...");
-    const toptextsText = await (await fetch(api + "/toptexts")).text();
+    const toptextsText = await (await fetch(api + "/toptexts")).json();
 
-    toptexts = (JSON.parse(toptextsText) as ApiMemeText[])
+    toptexts = apiMemeText
+      .array()
+      .parse(toptextsText)
       .map((x) => ({ id: x.id, text: x.memetext }))
       .filter(({ text }) => text);
 
-    const bottomtextsText = await (await fetch(api + "/bottomtexts")).text();
-    bottomtexts = (JSON.parse(bottomtextsText) as ApiMemeText[])
+    const bottomtextsText = await (await fetch(api + "/bottomtexts")).json();
+    bottomtexts = apiMemeText
+      .array()
+      .parse(bottomtextsText)
       .map((x) => ({
         id: x.id,
         text: x.memetext,
       }))
       .filter(({ text }) => text);
 
-    visuals = JSON.parse(await (await fetch(api + "/visuals")).text());
+    visuals = visual
+      .array()
+      .parse(await (await fetch(api + "/visuals")).json());
+
+    const uTop = uniqBy(toptexts, "text");
+    if (uTop.length !== toptexts.length) {
+      log("Duplicate toptexts: " + JSON.stringify(difference(toptexts, uTop)));
+    }
+    const uBot = uniqBy(bottomtexts, "text");
+    if (uBot.length !== bottomtexts.length) {
+      log(
+        "Duplicate bottomtexts: " +
+          JSON.stringify(difference(bottomtexts, uBot))
+      );
+    }
+    const uVis = uniqBy(visuals, "filename");
+    if (uVis.length !== visuals.length) {
+      log("Duplicate visuals: " + JSON.stringify(difference(visuals, uVis)));
+    }
   }
 }
