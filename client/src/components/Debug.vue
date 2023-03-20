@@ -4,7 +4,7 @@ import { mountSubscriptions, subscriptions, ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { MessageType } from "../model";
 const isDebug = store.settings.debug || false;
-const showDebug = ref(false);
+const props = defineProps<{ showDebug: boolean; toggleDebug: () => void }>();
 
 const pre = ref<HTMLPreElement>();
 const input = ref<HTMLInputElement>();
@@ -17,7 +17,7 @@ const event = (e: KeyboardEvent) => {
   if (e.isComposing || !isDebug) return;
   if (e.ctrlKey && e.key === "`") {
     e.preventDefault();
-    showDebug.value = !showDebug.value;
+    props.toggleDebug();
   }
 };
 onMounted(() => {
@@ -27,8 +27,8 @@ onUnmounted(() => {
   document.removeEventListener("keydown", event);
 });
 
-watch(showDebug, () => {
-  if (showDebug.value) {
+watch(props, () => {
+  if (props.showDebug) {
     input.value?.focus();
   } else {
     input.value?.blur();
