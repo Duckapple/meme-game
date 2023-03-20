@@ -49,7 +49,7 @@ import {
 } from "./state";
 import log from "./log";
 import { exit } from "process";
-import { bottomtexts, toptexts, visuals } from "./api";
+import { bottomtexts, submit, toptexts, visuals } from "./api";
 import _ from "lodash";
 import { sendOnSocket } from "./utils";
 const { app } = expressWs(express());
@@ -343,6 +343,16 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   state.plays[playerIndex] = move;
 
   cleanup.forEach((f) => f());
+
+  void Promise.all(
+    (["top", "bottom"] as const)
+      .filter((side) => move[side]?.id === -1 && move[side]?.text)
+      .map((side) =>
+        move[side]?.text
+          ? submit(`${side}texts`, { memetext: move[side]?.text ?? "" })
+          : Promise.resolve()
+      )
+  );
 
   const noMovePlayerCount = state.plays.filter((v) => v == null).length;
   let switchCount = room.settings.gameStyle === GameStyle.TZAR ? 1 : 0;

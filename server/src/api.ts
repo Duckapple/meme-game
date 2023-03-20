@@ -72,3 +72,29 @@ export async function refresh() {
     }
   }
 }
+
+export function submit(
+  endpoint: "visuals",
+  data: Omit<z.infer<typeof visual>, "id">
+): Promise<void>;
+export function submit(
+  endpoint: "toptexts" | "bottomtexts",
+  data: Omit<z.infer<typeof apiMemeText>, "id">
+): Promise<void>;
+export async function submit(endpoint: string, body: any) {
+  log(`Submitted '${JSON.stringify(body)}' to '${endpoint}'`);
+  try {
+    log(
+      await (
+        await fetch(`${api}/${endpoint}`, {
+          body: JSON.stringify(body),
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        })
+      ).json()
+    );
+  } catch (err) {}
+}
