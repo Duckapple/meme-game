@@ -83,3 +83,7 @@ export type EndStandings = Record<
   Standing,
   { players: PlayerName[]; standing: number }
 >;
+
+export type Highlight = (Move | AnonymousMove) & {
+  visual: string;
+};

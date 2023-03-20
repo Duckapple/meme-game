@@ -10,6 +10,7 @@ import type {
   MoveState,
   Blank,
 } from "../model";
+import { store } from "../state";
 
 const narrowAxis = ref<"w-full" | "h-full">(
   window.innerWidth > window.innerHeight ? "h-full" : "w-full"
@@ -39,6 +40,24 @@ const props = defineProps<{
 }>();
 
 const likeState = ref(props.players.map(() => false));
+const saveState = ref(props.players.map(() => false));
+const makeSave = (i: number, play: Move) => {
+  saveState.value[i] = !saveState.value[i];
+  if (saveState.value[i] && props.state.visual) {
+    store.savedMemes.push({
+      visual: props.state.visual,
+      ...play,
+    });
+  } else {
+    const index = store.savedMemes.findIndex(
+      ({ visual, bottom, top }) =>
+        visual === props.state.visual &&
+        bottom?.text === play.bottom?.text &&
+        top?.text === play.top?.text
+    );
+    index !== -1 && store.savedMemes.splice(index, 1);
+  }
+};
 
 const like = ref<HTMLDivElement>();
 const makeLike = (i: number) => {
@@ -74,6 +93,7 @@ watch(props, (p) => {
   if (prevPhase.value !== p.state.phase) {
     incomingMove.value = { player: p.username };
     likeState.value = props.players.map(() => false);
+    saveState.value = props.players.map(() => false);
     currentCard.value = 0;
     prevPhase.value = p.state.phase;
     top.value = "";
@@ -217,7 +237,7 @@ const blankHighlit =
       </div>
     </div>
     <div
-      class="relative sm:w-[36rem] md:w-[48rem] sm:h-[36rem] md:h-[48rem] flex justify-center items-center py-2 xl:p-4"
+      class="relative max-w-full sm:w-[36rem] md:w-[48rem] sm:h-[36rem] md:h-[48rem] flex justify-center items-center py-2 xl:p-4"
     >
       <Meme
         v-if="props.state.visual"
@@ -337,6 +357,22 @@ const blankHighlit =
         @click="makeLike(i)"
       >
         🤍
+      </button>
+      <button
+        v-if="play && play != 'HIDDEN'"
+        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none right-16 top-16 xl:right-1/4"
+        :class="{ 'scale-[500%]': saveState[i] }"
+        @click="makeSave(i, play)"
+      >
+        🌟
+      </button>
+      <button
+        v-if="play && play != 'HIDDEN'"
+        class="absolute z-30 text-blue-900 transition-transform scale-0 cursor-pointer select-none right-16 top-14 xl:right-1/4"
+        :class="{ 'scale-[500%]': !saveState[i] }"
+        @click="makeSave(i, play)"
+      >
+        ⭐
       </button>
       <div
         v-if="play && play != 'HIDDEN' && play.player === username"

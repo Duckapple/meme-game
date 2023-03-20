@@ -1,5 +1,5 @@
 import { reactive, ref, watch } from "vue";
-import type { RoomDetails } from "./model";
+import type { Highlight, RoomDetails } from "./model";
 
 const localStoreKey = "meme-game-store";
 
@@ -8,13 +8,14 @@ type Store = {
     colorBlind: boolean;
     debug?: boolean;
   };
+  savedMemes: Highlight[];
 };
 
-let initialStore: Store = { settings: { colorBlind: false } };
+let initialStore: Store = { settings: { colorBlind: false }, savedMemes: [] };
 const localStore = localStorage.getItem(localStoreKey);
 
 if (localStore) {
-  initialStore = JSON.parse(localStore);
+  initialStore = { ...initialStore, ...JSON.parse(localStore) };
 }
 
 export const store = reactive<Store>(initialStore);
