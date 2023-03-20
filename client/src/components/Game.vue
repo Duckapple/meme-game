@@ -193,11 +193,11 @@ const blankHighlit =
 
 <template>
   <div
-    class="absolute inset-0 pb-16 sm:py-8 flex flex-col sm:flex-row justify-center max-w-[58rem] sm:max-w-none transition-[opacity transform] duration-500"
+    class="absolute inset-0 pb-16 xl:py-8 flex flex-col xl:flex-row items-center xl:items-top justify-center max-w-[58rem] xl:max-w-none transition-[opacity transform] duration-500"
     :class="{ 'opacity-0 scale-0': state.phase !== 'move' }"
   >
     <div
-      class="flex sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 overflow-auto min-h-[2rem] pl-4 pt-4"
+      class="flex xl:flex-col space-x-2 xl:space-x-0 xl:space-y-2 overflow-auto min-h-[2rem] pl-4 pt-4 max-w-full"
     >
       <div
         v-for="top in hand.top"
@@ -217,7 +217,7 @@ const blankHighlit =
       </div>
     </div>
     <div
-      class="relative sm:w-[48rem] sm:h-[48rem] flex justify-center items-center py-2 sm:p-4"
+      class="relative sm:w-[36rem] md:w-[48rem] sm:h-[36rem] md:h-[48rem] flex justify-center items-center py-2 xl:p-4"
     >
       <Meme
         v-if="props.state.visual"
@@ -233,14 +233,14 @@ const blankHighlit =
       />
       <input
         ref="topBlankInput"
-        class="absolute sm:text-4xl text-center bg-transparent text-transparent top-3 sm:top-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] sm:tracking-wider"
+        class="absolute xl:text-4xl text-center bg-transparent text-transparent top-3 xl:top-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] xl:tracking-wider"
         :value="top"
         :class="{ hidden: incomingMove.top?.id !== -1 || isTzar || moveState }"
         @input="(evt) => (top = (evt.target as any)?.value ?? '')"
       />
       <input
         ref="bottomBlankInput"
-        class="absolute sm:text-4xl text-center bg-transparent text-transparent bottom-1 sm:bottom-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] sm:tracking-wider"
+        class="absolute xl:text-4xl text-center bg-transparent text-transparent bottom-1 xl:bottom-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] xl:tracking-wider"
         :class="{
           hidden: incomingMove.bottom?.id !== -1 || isTzar || moveState,
         }"
@@ -249,7 +249,7 @@ const blankHighlit =
       />
     </div>
     <div
-      class="flex sm:flex-col pt-4 pl-4 space-x-2 sm:space-x-0 sm:space-y-2 overflow-x-auto overflow-y-visible min-h-[2rem]"
+      class="flex xl:flex-col pt-4 pl-4 space-x-2 xl:space-x-0 xl:space-y-2 overflow-x-auto overflow-y-visible min-h-[2rem] max-w-full"
     >
       <div
         v-for="bottom in hand.bottom"
@@ -273,7 +273,7 @@ const blankHighlit =
     </div>
     <button
       :class="{ disabled: isTzar || moveState }"
-      class="absolute w-[calc(100%-2rem)] sm:w-auto btn left-4 right-4 sm:left-[unset] sm:right-[unset] bottom-2 sm:bottom-8"
+      class="absolute w-[calc(100%-2rem)] xl:w-auto btn left-4 right-4 xl:left-[unset] xl:right-[unset] bottom-2 xl:bottom-8"
       @click="
         () =>
           !(isTzar || moveState) &&
@@ -412,7 +412,7 @@ const blankHighlit =
   </div>
   <span
     v-if="timerNow"
-    class="absolute sm:scale-[300%] right-4 sm:right-20 top-2 sm:top-16 z-30 text-3xl text-white text-shadow"
+    class="absolute lg:scale-[300%] right-4 lg:right-20 top-2 lg:top-16 z-30 text-3xl text-white text-shadow"
   >
     {{ Math.max(0, state.timerEnd - timerNow) }}
   </span>
