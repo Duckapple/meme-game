@@ -116,10 +116,19 @@ const onMakeMoveWithBlanks: MakeMoveFunction = (incomingMove) => {
   props.onMakeMove(actualMove);
 };
 
+const topBlankInput = ref();
+const bottomBlankInput = ref();
+
 const updateIncomingMove = <K extends keyof Move>(key: K, value: Move[K]) => {
   if (incomingMove.value[key] === value)
     return (incomingMove.value[key] = undefined);
   incomingMove.value[key] = value;
+  if ((value as Move["top"])?.id === -1) {
+    setTimeout(() => {
+      if (key === "top") return topBlankInput.value?.focus();
+      return bottomBlankInput.value?.focus();
+    }, 100);
+  }
 };
 
 const onArrow = (e: KeyboardEvent) => {
@@ -147,7 +156,7 @@ const onArrow = (e: KeyboardEvent) => {
       return;
     }
   }
-  console.log(e.key);
+  // console.log(e.key);
 };
 
 const moveLegal = computed(
@@ -219,14 +228,16 @@ const blankHighlit =
         class="max-w-[48rem] max-h-[48rem]"
       />
       <input
-        v-if="incomingMove.top?.id === -1"
-        class="absolute text-4xl text-center bg-transparent text-transparent top-4 font-[Impacto] w-[90%] border-b-2"
+        ref="topBlankInput"
+        class="absolute text-4xl text-center bg-transparent text-transparent top-4 font-[Impacto] w-[90%] border-b-2 caret-white tracking-wider"
         :value="top"
+        :class="{ hidden: incomingMove.top?.id !== -1 }"
         @input="(evt) => (top = (evt.target as any)?.value ?? '')"
       />
       <input
-        v-if="incomingMove.bottom?.id === -1"
-        class="absolute text-4xl text-center bg-transparent text-transparent bottom-4 font-[Impacto] w-[90%] border-b-2"
+        ref="bottomBlankInput"
+        class="absolute text-4xl text-center bg-transparent text-transparent bottom-4 font-[Impacto] w-[90%] border-b-2 caret-white tracking-wider"
+        :class="{ hidden: incomingMove.bottom?.id !== -1 }"
         :value="bottom"
         @input="(evt) => (bottom = (evt.target as any)?.value ?? '')"
       />
