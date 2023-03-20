@@ -4,6 +4,7 @@ import {
   FullCard,
   GameSettings,
   GameState,
+  Highlight,
   Move,
   MoveState,
   RoomDetails,
@@ -157,6 +158,7 @@ export type EndGameResponse = {
   type: MessageType.END_GAME;
   state: GameState;
   standings: EndStandings;
+  // highlights: Highlight[];
 };
 export type EndStandingsResponse = {
   type: MessageType.END_STANDINGS;

@@ -252,6 +252,13 @@ export function setStandings(
   players: Player[]
 ): void {
   state.phase = "standings";
+  players.forEach(({ UUID }, i) => {
+    if (!state.votes.some((set) => set.has(UUID))) {
+      state.shuffle.forEach((i2) => {
+        if (i2 !== i) state.votes[i2].add(UUID);
+      });
+    }
+  });
   const results = state.votes
     .map<[Move | null, number, number]>((set, i) => [
       state.plays[i],
@@ -278,6 +285,7 @@ export function setStandings(
         type: MessageType.END_GAME,
         state: convertGameState(state),
         standings: getStanding(state, settings, players),
+        // highlights: [],
       };
       players.forEach(({ socket }) => sendOnSocket(socket, standingsMsg));
       return;
