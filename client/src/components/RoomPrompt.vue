@@ -23,14 +23,14 @@ const roomcodeError = ref<boolean>(false);
 </script>
 <template>
   <div class="flex flex-col items-center">
-    <h1 class="text-center text-9xl md:text-[10rem] pt-8 md:pt-12 select-none">
+    <h1 class="text-center text-9xl md:text-[10rem] pt-8 4xl:pt-20 select-none">
       Meme Game
     </h1>
-    <p class="pb-4 text-center md:pb-8 lg:mb-8 lg:text-xl">
+    <p class="pb-4 text-center md:pb-8 lg:mb-4 4xl:mb-12 lg:text-xl">
       Provided by me and my buddy Mads
     </p>
     <Input
-      class="mb-4 lg:mb-8"
+      class="mb-4 lg:mb-6 4xl:mb-8"
       :class="{
         'outline outline-2 outline-red-500': usernameError && !username,
       }"
@@ -45,7 +45,7 @@ const roomcodeError = ref<boolean>(false);
       :text="roomCode"
       :onInput="(v) => typeof v === 'string' && (roomCode = v)"
       :password="obscured"
-      class="mb-4 lg:mb-8"
+      class="mb-4 lg:mb-6 4xl:mb-8"
       :class="{
         'outline outline-2 outline-red-500': roomcodeError && !roomCode,
       }"
@@ -62,7 +62,7 @@ const roomcodeError = ref<boolean>(false);
           />
         </div> -->
     <button
-      class="mb-16 lg:mb-24 btn w-80 md:w-md lg:w-2xl"
+      class="mb-16 lg:mb-12 4xl:mb-24 btn w-80 md:w-md lg:w-2xl"
       @click="
         () => {
           if (username && roomCode) {
@@ -81,7 +81,7 @@ const roomcodeError = ref<boolean>(false);
       >
     </button>
     <button
-      class="btn w-80 md:w-md lg:w-2xl"
+      class="mb-4 lg:mb-6 4xl:mb-8 btn w-80 md:w-md lg:w-2xl"
       @click="
         () => {
           if (username) {
@@ -97,6 +97,13 @@ const roomcodeError = ref<boolean>(false);
         class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"
       >
         Create New Room
+      </span>
+    </button>
+    <button class="btn w-80 md:w-md lg:w-2xl">
+      <span
+        class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"
+      >
+        🌟 Saved Memes
       </span>
     </button>
   </div>

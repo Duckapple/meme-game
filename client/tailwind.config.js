@@ -13,6 +13,9 @@ module.exports = {
         "5xl": "52rem",
         "6xl": "56rem",
       },
+      screens: {
+        "4xl": "2400px",
+      },
     },
   },
   plugins: [],
