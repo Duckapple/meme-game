@@ -30,7 +30,8 @@ import { stopConfetti } from "./confetti";
 import Debug from "./components/Debug.vue";
 
 import { subscriptions, ws } from "./comms";
-import { username, UUID, visual_cdn, roomDetails } from "./state";
+import { username, UUID, visual_cdn, roomDetails, store } from "./state";
+import ResponsiveIndicator from "./components/ResponsiveIndicator.vue";
 
 export type MakeMoveFunction = (args: Partial<Move>) => void;
 
@@ -40,6 +41,8 @@ const hand = ref<undefined | Record<"top" | "bottom", (FullCard | Blank)[]>>({
 });
 const moveState = ref<MoveState | null>();
 const standings = ref<EndStandings>();
+const showDebug = ref(false);
+const toggleDebug = () => (showDebug.value = !showDebug.value);
 
 const ERROR = "ERROR";
 
@@ -293,7 +296,8 @@ const onEndStandings = () => {
     :username="username"
     :endGame="username === roomDetails?.creator ? onEndStandings : undefined"
   />
-  <Debug />
+  <Debug :show-debug="showDebug" :toggle-debug="toggleDebug" />
+  <ResponsiveIndicator v-if="showDebug" />
 </template>
 
 <style>
