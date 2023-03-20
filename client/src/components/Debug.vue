@@ -59,6 +59,7 @@ subscriptions.push([
 mountSubscriptions();
 
 const handleSend = (msgType: string, json: Record<string, any>) => {
+  msgType = msgType.toUpperCase();
   if (!(msgType in MessageType)) {
     lines.value.push([{ class: "text-red-500", text: "Invalid message type" }]);
     return;
@@ -126,12 +127,23 @@ const onEnter = (e: KeyboardEvent) => {
     oldValueIndex.value = oldValues.value.length;
     if (value.value.startsWith("send ")) {
       const [_, type, ...json] = value.value.split(" ");
+      let parsed;
       try {
-        let parsed = JSON.parse(json.join(" "));
-        handleSend(type, parsed);
+        parsed = JSON.parse(json.join(" "));
       } catch {
-        lines.value.push([{ class: "text-red-500", text: "Wrong JSON" }]);
+        if (json.length !== 0) {
+          lines.value.push([
+            {
+              class: "text-red-500",
+              text: `Bad JSON: '${JSON.stringify(json)}'`,
+            },
+          ]);
+          value.value = "";
+          return;
+        }
+        parsed = {};
       }
+      handleSend(type, parsed);
     } else if (value.value.startsWith("lookup ")) {
       const [_, type, ...json] = value.value.split(" ");
       try {

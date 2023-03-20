@@ -193,15 +193,17 @@ const blankHighlit =
 
 <template>
   <div
-    class="absolute inset-0 p-8 flex flex-col max-w-[58rem] transition-[opacity transform] duration-500"
+    class="absolute inset-0 pb-16 sm:py-8 flex flex-col sm:flex-row justify-center max-w-[58rem] sm:max-w-none transition-[opacity transform] duration-500"
     :class="{ 'opacity-0 scale-0': state.phase !== 'move' }"
   >
-    <div class="flex space-x-2 overflow-x-auto overflow-y-visible min-h-[2rem]">
+    <div
+      class="flex sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 overflow-auto min-h-[2rem] pl-4 pt-4"
+    >
       <div
         v-for="top in hand.top"
-        class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
+        class="relative flex-shrink-0 p-2 transition border-2 rounded cursor-pointer h-28 w-52 hover:-translate-y-4 hover:-translate-x-4"
         :class="{
-          '-translate-y-2 bg-gray-200 dark:bg-gray-700':
+          '-translate-y-2 -translate-x-2 bg-gray-200 dark:bg-gray-700':
             top === incomingMove?.top,
           'bg-gray-50 dark:bg-gray-800': top !== incomingMove?.top,
           [blank]: top?.id === -1 && top !== incomingMove?.top,
@@ -214,7 +216,9 @@ const blankHighlit =
         <span class="absolute text-xs right-2 bottom-2">{{ top.id }}</span>
       </div>
     </div>
-    <div class="relative w-[48rem] h-[48rem] flex justify-center items-center">
+    <div
+      class="relative sm:w-[48rem] sm:h-[48rem] flex justify-center items-center py-2 sm:p-4"
+    >
       <Meme
         v-if="props.state.visual"
         :bottom="
@@ -229,32 +233,35 @@ const blankHighlit =
       />
       <input
         ref="topBlankInput"
-        class="absolute text-4xl text-center bg-transparent text-transparent top-4 font-[Impacto] w-[90%] border-b-2 caret-white tracking-wider"
+        class="absolute sm:text-4xl text-center bg-transparent text-transparent top-3 sm:top-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] sm:tracking-wider"
         :value="top"
-        :class="{ hidden: incomingMove.top?.id !== -1 }"
+        :class="{ hidden: incomingMove.top?.id !== -1 || isTzar || moveState }"
         @input="(evt) => (top = (evt.target as any)?.value ?? '')"
       />
       <input
         ref="bottomBlankInput"
-        class="absolute text-4xl text-center bg-transparent text-transparent bottom-4 font-[Impacto] w-[90%] border-b-2 caret-white tracking-wider"
-        :class="{ hidden: incomingMove.bottom?.id !== -1 }"
+        class="absolute sm:text-4xl text-center bg-transparent text-transparent bottom-1 sm:bottom-8 font-[Impacto] w-[90%] border-b-2 caret-white tracking-[0.2em] sm:tracking-wider"
+        :class="{
+          hidden: incomingMove.bottom?.id !== -1 || isTzar || moveState,
+        }"
         :value="bottom"
         @input="(evt) => (bottom = (evt.target as any)?.value ?? '')"
       />
     </div>
     <div
-      class="flex pt-4 space-x-2 overflow-x-auto overflow-y-visible min-h-[2rem]"
+      class="flex sm:flex-col pt-4 pl-4 space-x-2 sm:space-x-0 sm:space-y-2 overflow-x-auto overflow-y-visible min-h-[2rem]"
     >
       <div
         v-for="bottom in hand.bottom"
-        class="relative flex-shrink-0 w-32 p-2 transition border-2 rounded cursor-pointer h-52 hover:-translate-y-4"
+        class="relative flex-shrink-0 p-2 transition border-2 rounded cursor-pointer h-28 w-52 hover:-translate-y-4 hover:-translate-x-4"
         :class="{
-          '-translate-y-2 bg-gray-200 dark:bg-gray-700':
+          '-translate-y-2 -translate-x-2 bg-gray-200 dark:bg-gray-700':
             bottom === incomingMove?.bottom,
           'bg-gray-50 dark:bg-gray-800': bottom !== incomingMove?.bottom,
           [blank]: bottom?.id === -1 && bottom !== incomingMove?.bottom,
           [blankHighlit]: bottom?.id === -1 && bottom === incomingMove?.bottom,
-          disabled: isTzar || moveState,
+          'disabled hover:translate-x-0 hover:translate-y-0':
+            isTzar || moveState,
         }"
         @click="
           () => !(isTzar || moveState) && updateIncomingMove('bottom', bottom)
@@ -266,7 +273,7 @@ const blankHighlit =
     </div>
     <button
       :class="{ disabled: isTzar || moveState }"
-      class="btn"
+      class="absolute w-[calc(100%-2rem)] sm:w-auto btn left-4 right-4 sm:left-[unset] sm:right-[unset] bottom-2 sm:bottom-8"
       @click="
         () =>
           !(isTzar || moveState) &&
@@ -398,14 +405,14 @@ const blankHighlit =
       </div>
       <span
         v-if="votes === state.standings[0][2]"
-        class="absolute select-none text-9xl right-4 bottom-6 rotate-12"
+        class="absolute text-5xl select-none sm:text-9xl right-2 sm:right-4 bottom-8 sm:bottom-6 rotate-12"
         >🏆</span
       >
     </div>
   </div>
   <span
     v-if="timerNow"
-    class="absolute scale-[300%] right-16 top-16 z-30 2xl:right-1/4 text-3xl text-white text-shadow"
+    class="absolute sm:scale-[300%] right-4 sm:right-20 top-2 sm:top-16 z-30 text-3xl text-white text-shadow"
   >
     {{ Math.max(0, state.timerEnd - timerNow) }}
   </span>
