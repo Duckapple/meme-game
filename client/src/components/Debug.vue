@@ -10,6 +10,8 @@ const pre = ref<HTMLPreElement>();
 const input = ref<HTMLInputElement>();
 
 const value = ref<string>();
+const oldValues = ref<string[]>([]);
+const oldValueIndex = ref(0);
 
 const event = (e: KeyboardEvent) => {
   if (e.isComposing || !isDebug) return;
@@ -92,6 +94,23 @@ const handleLookup = (elementType: string, data: any) => {
   }
 };
 
+const onArrows = (e: KeyboardEvent) => {
+  if (!["ArrowUp", "ArrowDown"].includes(e.key)) return;
+  e.preventDefault();
+  if (e.key === "ArrowUp" && oldValueIndex.value > 0) {
+    oldValueIndex.value--;
+    value.value = oldValues.value[oldValueIndex.value];
+  }
+  if (e.key === "ArrowDown" && oldValueIndex.value < oldValues.value.length) {
+    oldValueIndex.value++;
+    if (oldValueIndex.value === oldValues.value.length) {
+      value.value = "";
+    } else {
+      value.value = oldValues.value[oldValueIndex.value];
+    }
+  }
+};
+
 const onEnter = (e: KeyboardEvent) => {
   if (e.key !== "Enter" || e.shiftKey) return;
   e.preventDefault();
@@ -103,6 +122,8 @@ const onEnter = (e: KeyboardEvent) => {
         class: text === "send" ? "text-blue-500" : undefined,
       })),
     ]);
+    oldValues.value.push(value.value);
+    oldValueIndex.value = oldValues.value.length;
     if (value.value.startsWith("send ")) {
       const [_, type, ...json] = value.value.split(" ");
       try {
@@ -164,6 +185,7 @@ requestAnimationFrame(() => {
         placeholder="Type command..."
         v-model="value"
         @keypress="onEnter"
+        @keydown="onArrows"
       />
     </div>
   </div>
