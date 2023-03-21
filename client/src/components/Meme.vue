@@ -7,6 +7,8 @@ const props = defineProps<{
   top?: { text?: string } | null;
   bottom?: { text?: string } | null;
   imageMode?: GameSettings["imageMode"];
+  provideImage?: (canvas: HTMLCanvasElement) => void;
+  shouldProvideImage?: boolean;
 }>();
 
 const CANVAS_SIZE = 1000;
@@ -26,6 +28,7 @@ async function redraw() {
       visual.value.url = visualUrl.value;
       visual.value.image = undefined;
       const image = new Image();
+      image.crossOrigin = "anonymous";
       image.src = url;
       image.addEventListener("load", () => {
         visual.value.image = image;
@@ -109,6 +112,14 @@ watch(
   ],
   () => redraw()
 );
+watch([() => props.shouldProvideImage], ([should]) => {
+  try {
+    if (canvas.value && props.provideImage && should)
+      props.provideImage(canvas.value);
+  } catch (e) {
+    console.error(e);
+  }
+});
 </script>
 
 <template>

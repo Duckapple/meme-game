@@ -249,7 +249,7 @@ const blankHighlit =
         :top="incomingMove?.top?.id === -1 ? { text: top } : incomingMove?.top"
         :visual="props.state.visual"
         :image-mode="props.settings.imageMode"
-        class="max-w-[48rem] max-h-[48rem]"
+        class="w-full max-w-[48rem] max-h-[48rem]"
       />
       <input
         ref="topBlankInput"

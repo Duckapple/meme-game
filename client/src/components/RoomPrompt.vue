@@ -6,6 +6,7 @@ import { username } from "../state";
 defineProps<{
   onJoin: (username: string, roomCode: string) => void;
   onCreate: (username: string) => void;
+  onSavedMemes: () => void;
 }>();
 // const username = ref<string>(localStorage.getItem("username") ?? "");
 const roomCode = ref<string>(location.hash.slice(1));
@@ -99,7 +100,7 @@ const roomcodeError = ref<boolean>(false);
         Create New Room
       </span>
     </button>
-    <button class="btn w-80 md:w-md lg:w-2xl">
+    <button class="btn w-80 md:w-md lg:w-2xl" @click="onSavedMemes">
       <span
         class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"
       >

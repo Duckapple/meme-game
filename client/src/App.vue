@@ -32,6 +32,7 @@ import Debug from "./components/Debug.vue";
 import { subscriptions, ws } from "./comms";
 import { username, UUID, visual_cdn, roomDetails, store } from "./state";
 import ResponsiveIndicator from "./components/ResponsiveIndicator.vue";
+import SavedMemes from "./components/SavedMemes.vue";
 
 export type MakeMoveFunction = (args: Partial<Move>) => void;
 
@@ -42,6 +43,7 @@ const hand = ref<undefined | Record<"top" | "bottom", (FullCard | Blank)[]>>({
 const moveState = ref<MoveState | null>();
 const standings = ref<EndStandings>();
 const showDebug = ref(false);
+const showSavedMemes = ref(false);
 const toggleDebug = () => (showDebug.value = !showDebug.value);
 
 const ERROR = "ERROR";
@@ -257,7 +259,12 @@ const onEndStandings = () => {
 </script>
 
 <template>
-  <RoomPrompt v-if="!roomDetails" :onJoin="onJoin" :onCreate="onCreate" />
+  <RoomPrompt
+    v-if="!roomDetails && !showSavedMemes"
+    :on-join="onJoin"
+    :on-create="onCreate"
+    :on-saved-memes="() => (showSavedMemes = !showSavedMemes)"
+  />
   <Room
     v-if="username && roomDetails && !roomDetails.state"
     v-bind="roomDetails"
@@ -298,6 +305,10 @@ const onEndStandings = () => {
   />
   <Debug :show-debug="showDebug" :toggle-debug="toggleDebug" />
   <ResponsiveIndicator v-if="showDebug" />
+  <SavedMemes
+    v-if="showSavedMemes"
+    :go-back="() => (showSavedMemes = !showSavedMemes)"
+  />
 </template>
 
 <style>
