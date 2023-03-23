@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { store, visual_cdn } from "../state";
+import { subscriptions } from "../comms";
 import Meme from "./Meme.vue";
 defineProps<{ goBack: () => void }>();
 const currentCategory = ref<number>();
 const popper = ref<number>();
+const hoverIndex = ref<number>();
 const currentImage = ref<HTMLCanvasElement>();
 const hasClipboardItem = !!globalThis.ClipboardItem;
 const dotsHidden = ref(false);
@@ -29,6 +31,7 @@ const copy = async () => {
         if (blob) {
           const item = new ClipboardItem({ [blob.type]: blob });
           navigator.clipboard.write([item]);
+          popper.value = undefined;
         }
       }, "image/png");
     }
@@ -43,8 +46,21 @@ const save = async () => {
     a.setAttribute("download", "meme.png");
     a.href = image;
     a.click();
+    popper.value = undefined;
   }
 };
+const debug = () => {
+  if (popper.value != null) {
+    const debugSub = subscriptions
+      .filter(([type]) => type === "message")
+      .at(-1) ?? [null, () => {}];
+    const data = JSON.stringify(store.savedMemes[popper.value]);
+    if ("handleEvent" in debugSub[1]) return;
+    else debugSub[1]({ data } as any);
+    popper.value = undefined;
+  }
+};
+const log = console.log;
 </script>
 
 <template>
@@ -53,7 +69,7 @@ const save = async () => {
     class="absolute inset-0 bg-white xl:p-16 dark:bg-gray-900"
   >
     <button
-      class="absolute text-6xl rotate-180 md:text-8xl left-4 top-2 md:top-4"
+      class="fixed top-0 z-10 text-6xl text-white rotate-180 md:text-8xl left-4 md:top-4 text-shadow"
       @click="
         () =>
           currentCategory == null ? goBack() : (currentCategory = undefined)
@@ -62,7 +78,7 @@ const save = async () => {
       ➜
     </button>
     <button
-      v-if="!hasClipboardItem"
+      v-if="!hasClipboardItem && currentCategory != null"
       class="absolute px-2 py-1 md:px-6 md:py-3 btn top-6 md:top-12 right-4 md:left-36 md:right-[unset]"
       @click="dotsHidden = !dotsHidden"
     >
@@ -70,12 +86,22 @@ const save = async () => {
     </button>
     <div
       v-if="currentCategory == null"
+      class="absolute top-0 flex items-center justify-end w-3/4 h-20 text-right md:w-full md:text-2xl md:justify-center right-2 md:h-32"
+    >
+      <span
+        >Meme templates, <span class="hidden md:inline">click</span
+        ><span class="md:hidden">tap</span> to see memes made with each
+        template</span
+      >
+    </div>
+    <div
+      v-if="currentCategory == null"
       class="grid flex-wrap grid-cols-3 mt-16 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 md:mt-24 xl:mt-12"
     >
       <button v-for="(visual, i) in categories" class="m-2 aspect-square">
         <img
           :src="visual_cdn + visual"
-          class="aspect-square"
+          class="aspect-square hover:outline outline-blue-500"
           width="512"
           height="512"
           @click="currentCategory = i"
@@ -88,7 +114,7 @@ const save = async () => {
     >
       <div
         v-for="{ i, meme: { top, bottom, visual } } in filtered"
-        class="relative p-2"
+        class="relative m-2"
         :id="`meme-${i}`"
       >
         <Meme
@@ -97,11 +123,17 @@ const save = async () => {
           :visual="visual"
           imageMode="stretch"
           :provide-image="(s) => (currentImage = s)"
-          :should-provide-image="popper === i"
+          :should-provide-image="hoverIndex === i"
+          @mouseenter="hoverIndex = i"
+        />
+        <img
+          v-if="hoverIndex === i && currentImage"
+          class="absolute inset-0"
+          :src="currentImage.toDataURL()"
         />
         <button
           v-if="!dotsHidden"
-          class="absolute text-5xl top-4 right-4 text-shadow"
+          class="absolute z-10 text-5xl top-4 right-4 text-shadow"
           @click="popper = i"
         >
           &#8285;
@@ -116,12 +148,12 @@ const save = async () => {
               disabled: !hasClipboardItem,
               'hover:bg-gray-100 dark:hover:bg-gray-700': hasClipboardItem,
             }"
-            @click="hasClipboardItem && copy()"
+            @click="hasClipboardItem ? copy() : (popper = undefined)"
           >
             {{
               hasClipboardItem
                 ? "Copy to clipboard"
-                : "To copy: snipping tool in browser"
+                : "To copy: right-click/long-press and copy"
             }}
           </button>
           <button
@@ -131,9 +163,31 @@ const save = async () => {
             Save locally
           </button>
           <button
+            :class="{
+              disabled: true,
+              'hover:bg-gray-100 dark:hover:bg-gray-700': false,
+            }"
+            class="w-full px-4 py-2 text-left"
+          >
+            Uploading to meme server is coming!
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+            @click="
+              () => {
+                store.savedMemes.splice(i, 1);
+                popper = undefined;
+              }
+            "
+          >
+            Delete meme
+          </button>
+          <button
+            v-if="store.settings.debug"
+            @click="debug"
             class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            Upload to meme server
+            Dump in console
           </button>
         </div>
       </div>

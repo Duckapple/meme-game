@@ -2,7 +2,7 @@
 import { store, username, UUID, roomDetails } from "../state";
 import { mountSubscriptions, subscriptions, ws } from "../comms";
 import { ref, onMounted, onUnmounted, watch } from "vue";
-import { MessageType } from "../model";
+import { MessageType, Highlight } from "../model";
 const isDebug = store.settings.debug || false;
 const props = defineProps<{ showDebug: boolean; toggleDebug: () => void }>();
 
@@ -35,13 +35,27 @@ watch(props, () => {
   }
 });
 
-// Dummy string to ensure text colors are included in the output.
-const colors = "text-red-500 text-blue-500 text-green-500 text-yellow-500";
+const c = {
+  red: (text: string) => ({ text, class: "text-red-500" }),
+  blue: (text: string) => ({ text, class: "text-blue-500" }),
+  green: (text: string) => ({ text, class: "text-green-500" }),
+  yellow: (text: string) => ({ text, class: "text-yellow-500" }),
+};
 
 const lines = ref<(string | { class?: string; text: string }[])[]>([
   "Welcome to the Debug Console!",
   // 'Type "help" for a list of commands.',
 ]);
+
+const err = (text: string) => {
+  lines.value.push([c.red(text)]);
+};
+
+const pushToEnd = () => {
+  requestAnimationFrame(() => {
+    pre.value && (pre.value.scrollTop = pre.value.scrollHeight);
+  });
+};
 
 subscriptions.push([
   "message",
@@ -53,6 +67,7 @@ subscriptions.push([
       { text: "> " },
       { class: "text-yellow-500", text: e.data },
     ]);
+    pushToEnd();
   },
 ]);
 
@@ -77,13 +92,11 @@ const handleSend = (msgType: string, json: Record<string, any>) => {
 
 const handleLookup = (elementType: string, data: any) => {
   if (!["bottom", "top", "visual"].includes(elementType)) {
-    lines.value.push([{ class: "text-red-500", text: "Invalid element type" }]);
+    lines.value.push([c.red("Invalid element type")]);
     return;
   }
   if (elementType === "visual") {
-    lines.value.push([
-      { class: "text-red-500", text: "Not supported yet lol" },
-    ]);
+    lines.value.push([c.red("Not supported yet lol")]);
   } else {
     ws.value.send(
       JSON.stringify({
@@ -120,7 +133,9 @@ const onEnter = (e: KeyboardEvent) => {
       { text: "> " },
       ...value.value.split(" ").map((text) => ({
         text: text + " ",
-        class: text === "send" ? "text-blue-500" : undefined,
+        class: ["send", "lookup", "save", "savedmemes"].includes(text)
+          ? "text-blue-500"
+          : undefined,
       })),
     ]);
     oldValues.value.push(value.value);
@@ -132,12 +147,7 @@ const onEnter = (e: KeyboardEvent) => {
         parsed = JSON.parse(json.join(" "));
       } catch {
         if (json.length !== 0) {
-          lines.value.push([
-            {
-              class: "text-red-500",
-              text: `Bad JSON: '${JSON.stringify(json)}'`,
-            },
-          ]);
+          err(`Bad JSON: '${JSON.stringify(json)}'`);
           value.value = "";
           return;
         }
@@ -151,25 +161,44 @@ const onEnter = (e: KeyboardEvent) => {
         parsed = json.length > 0 ? JSON.parse(json.join(" ")) : undefined;
         handleLookup(type, parsed);
       } catch {
-        lines.value.push([{ class: "text-red-500", text: "Wrong JSON" }]);
+        err("Wrong JSON");
       }
+    } else if (value.value.startsWith("save ")) {
+      const text = value.value.slice(5);
+      try {
+        const parsed = JSON.parse(text) as Highlight;
+        const filter = (k: string) =>
+          !["visual", "top", "bottom", "player"].includes(k);
+        if (!parsed.visual || Object.keys(parsed).some(filter)) {
+          const bad = Object.keys(parsed).filter(filter);
+          if (bad.length > 0) err(`Bad keys: '${bad}'`);
+          else err("Missing visual");
+        } else {
+          store.savedMemes.push(parsed);
+          lines.value.push([c.green("Meme saved.")]);
+        }
+      } catch {
+        err(`Bad JSON: ${JSON.stringify(text)}`);
+      }
+    } else if (value.value.toLowerCase() === "savedmemes") {
+      lines.value.push([
+        c.green("Saved Memes"),
+        { text: ">" },
+        ...store.savedMemes.map((m) => c.yellow(JSON.stringify(m))),
+      ]);
     }
-    requestAnimationFrame(() => {
-      pre.value && (pre.value.scrollTop = pre.value.scrollHeight);
-    });
+    pushToEnd();
     value.value = undefined;
   }
 };
 
-requestAnimationFrame(() => {
-  pre.value && (pre.value.scrollTop = pre.value.scrollHeight);
-});
+pushToEnd();
 </script>
 
 <template>
   <div
     v-if="isDebug"
-    class="px-2 pt-2 absolute inset-x-0 top-0 transition-transform -translate-y-full z-[100] backdrop-blur backdrop-brightness-50"
+    class="px-2 pt-2 fixed inset-x-0 top-0 transition-transform -translate-y-full z-[100] backdrop-blur backdrop-brightness-50"
     :class="{ 'translate-y-0': showDebug }"
   >
     <div ref="pre" class="flex flex-col overflow-y-auto font-mono h-60">

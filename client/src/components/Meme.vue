@@ -67,7 +67,7 @@ async function redraw() {
   ctx.font = `${CANVAS_SIZE / 20}px Impacto`;
   ctx.fillStyle = "white";
   ctx.strokeStyle = "black";
-  ctx.lineWidth = CANVAS_SIZE / 200;
+  ctx.lineWidth = CANVAS_SIZE / 500;
   const top = props.top;
   const textMaxWidth =
     props.imageMode === "scale" ? image.width * ratio : cvs.width;

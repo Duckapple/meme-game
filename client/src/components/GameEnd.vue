@@ -45,7 +45,10 @@ const hide = ref(false);
 </script>
 
 <template>
-  <div class="transition-opacity fade-in" :class="{ 'opacity-0': hide }">
+  <div
+    class="text-white transition-opacity fade-in"
+    :class="{ 'opacity-0': hide }"
+  >
     <div
       class="absolute inset-0 z-40 transition-opacity bg-black opacity-60"
       :class="{ 'opacity-0': hide }"
@@ -125,7 +128,7 @@ const hide = ref(false);
       v-if="endGame"
       @pointerup="() => (hide = false)"
     >
-      <button @click="endGame" class="btn">
+      <button @click="endGame" class="text-gray-900 btn dark:text-gray-200">
         <span class="block px-8 py-4 cursor-pointer">End Game</span>
       </button>
     </div>

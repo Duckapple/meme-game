@@ -27,7 +27,7 @@ const roomcodeError = ref<boolean>(false);
     <h1 class="text-center text-9xl md:text-[10rem] pt-8 4xl:pt-20 select-none">
       Meme Game
     </h1>
-    <p class="pb-4 text-center md:pb-8 lg:mb-4 4xl:mb-12 lg:text-xl">
+    <p class="pb-4 text-center md:pb-8 lg:mb-0 4xl:mb-12 lg:text-xl">
       Provided by me and my buddy Mads
     </p>
     <Input

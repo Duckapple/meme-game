@@ -324,7 +324,7 @@ body {
 }
 
 .disabled {
-  @apply text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-600 cursor-not-allowed;
+  @apply text-gray-500 dark:text-gray-400 cursor-not-allowed;
 }
 
 .btn.disabled {

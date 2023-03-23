@@ -344,35 +344,103 @@ const blankHighlit =
       </span>
       <button
         v-if="play && play != 'HIDDEN' && play.player !== username"
-        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4"
-        :class="{ 'scale-[500%]': likeState[i] }"
+        class="absolute z-30 text-red-500 transition-transform scale-0 cursor-pointer select-none left-8 sm:left-16 bottom-1/4 sm:bottom-16 2xl:left-1/4"
+        :class="{
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': likeState[i],
+        }"
         @click="play.player !== username && makeLike(i)"
       >
-        ❤️
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+        >
+          <mask id="ipSLike0">
+            <path
+              fill="#fff"
+              stroke="#fff"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="4"
+              d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.987 10.987 0 0 0 15 8Z"
+            />
+          </mask>
+          <path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipSLike0)" />
+        </svg>
       </button>
       <button
         v-if="play && play != 'HIDDEN' && play.player !== username"
-        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none left-16 bottom-16 xl:left-1/4 text-shadow"
-        :class="{ 'scale-[500%]': !likeState[i] }"
+        class="absolute z-30 text-red-500 transition-transform scale-0 cursor-pointer select-none left-8 sm:left-16 bottom-1/4 sm:bottom-16 2xl:left-1/4"
+        :class="{
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !likeState[i],
+        }"
         @click="makeLike(i)"
       >
-        🤍
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="4"
+            d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.987 10.987 0 0 0 15 8Z"
+          />
+        </svg>
       </button>
       <button
         v-if="play && play != 'HIDDEN'"
-        class="absolute z-30 transition-transform scale-0 cursor-pointer select-none right-16 top-16 xl:right-1/4"
-        :class="{ 'scale-[500%]': saveState[i] }"
+        class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
+        :class="{
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': saveState[i],
+        }"
         @click="makeSave(i, play)"
       >
-        🌟
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+        >
+          <mask id="ipSStar0">
+            <path
+              fill="#fff"
+              stroke="#fff"
+              stroke-linejoin="round"
+              stroke-width="4"
+              d="m23.999 5l-6.113 12.478L4 19.49l10.059 9.834L11.654 43L24 36.42L36.345 43L33.96 29.325L44 19.491l-13.809-2.013L24 5Z"
+            />
+          </mask>
+          <path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipSStar0)" />
+        </svg>
       </button>
       <button
         v-if="play && play != 'HIDDEN'"
-        class="absolute z-30 text-blue-900 transition-transform scale-0 cursor-pointer select-none right-16 top-14 xl:right-1/4"
-        :class="{ 'scale-[500%]': !saveState[i] }"
+        class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
+        :class="{
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !saveState[i],
+        }"
         @click="makeSave(i, play)"
       >
-        ⭐
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-linejoin="round"
+            stroke-width="4"
+            d="m23.999 5l-6.113 12.478L4 19.49l10.059 9.834L11.654 43L24 36.42L36.345 43L33.96 29.325L44 19.491l-13.809-2.013L24 5Z"
+          />
+        </svg>
       </button>
       <div
         v-if="play && play != 'HIDDEN' && play.player === username"
