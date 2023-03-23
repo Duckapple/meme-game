@@ -25,6 +25,7 @@ export type Message =
   | LookupMessage
   | VoteMessage
   | DoneVotingMessage
+  | ForceSkipMessage
   | AdminMergeStateMessage;
 
 export enum MessageType {
@@ -45,6 +46,7 @@ export enum MessageType {
   VOTE = "VOTE",
   DONE_VOTING = "DONE_VOTING",
   ADMIN_MERGE_STATE = "ADMIN_MERGE_STATE",
+  FORCE_SKIP = "FORCE_SKIP",
 }
 
 type UUID = string;
@@ -114,6 +116,11 @@ export type VoteMessage = WithUser &
 export type DoneVotingMessage = WithUser &
   WithRoom & {
     type: MessageType.DONE_VOTING;
+  };
+export type ForceSkipMessage = WithUser &
+  WithRoom & {
+    type: MessageType.FORCE_SKIP;
+    phase: GameState["phase"];
   };
 export type AdminMergeStateMessage = WithRoom &
   WithAdminOverride & {

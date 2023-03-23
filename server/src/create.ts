@@ -162,9 +162,28 @@ export function setNextTurn(
   state.timerEnd = Math.round(
     (new Date().getTime() + settings.maxTimer.move) / 1000 + 1
   );
+  stopTimeout(state);
+  state.timeout = setTimeout(() => {
+    skipMove(state, settings, players);
+  }, settings.maxTimer.move + 1000);
 }
 
-export function setTzar(
+export function skipMove(
+  state: InternalGameState,
+  settings: GameSettings,
+  players: Player[]
+) {
+  setVoting(state, settings, players);
+  const update: UpdateRoomResponse = {
+    type: MessageType.UPDATE_ROOM,
+    update: "Time is up! Moving on to voting.",
+  };
+  players.forEach(({ socket, name }) =>
+    sendOnSocket(socket, { ...update, state: convertGameState(state, name) })
+  );
+}
+
+export function setVoting(
   state: InternalGameState,
   settings: GameSettings,
   players: Player[]
@@ -183,15 +202,23 @@ export function setTzar(
   log(`Shuffle is ${JSON.stringify(state.shuffle)}`);
   stopTimeout(state);
   state.timeout = setTimeout(() => {
-    setStandings(state, settings, players);
-    const update: UpdateRoomResponse = {
-      type: MessageType.UPDATE_ROOM,
-      update: "Time is up! Moving on to standings.",
-      state: convertGameState(state),
-      moveState: null,
-    };
-    players.forEach(({ socket }) => sendOnSocket(socket, update));
+    skipVoting(state, settings, players);
   }, settings.maxTimer.vote + 1000);
+}
+
+export function skipVoting(
+  state: InternalGameState,
+  settings: GameSettings,
+  players: Player[]
+) {
+  setStandings(state, settings, players);
+  const update: UpdateRoomResponse = {
+    type: MessageType.UPDATE_ROOM,
+    update: "Time is up! Moving on to standings.",
+    state: convertGameState(state),
+    moveState: null,
+  };
+  players.forEach(({ socket }) => sendOnSocket(socket, update));
 }
 
 function err(_switchValue: never): never {
@@ -280,28 +307,36 @@ export function setStandings(
   );
   stopTimeout(state);
   state.timeout = setTimeout(() => {
-    if (state.hasAnyoneWon) {
-      const standingsMsg: EndGameResponse = {
-        type: MessageType.END_GAME,
-        state: convertGameState(state),
-        standings: getStanding(state, settings, players),
-        // highlights: [],
-      };
-      players.forEach(({ socket }) => sendOnSocket(socket, standingsMsg));
-      return;
-    }
-    setNextTurn(state, settings, players);
-    const update: UpdateRoomResponse = {
-      type: MessageType.UPDATE_ROOM,
-      update: "Time is up! Moving on to next round.",
-      state: convertGameState(state),
-      moveState: null,
-    };
-    players.forEach(({ socket }, i) =>
-      sendOnSocket(socket, {
-        ...update,
-        cardUpdate: { type: "replace", ...state.hands[i] },
-      })
-    );
+    skipStandings(state, settings, players);
   }, settings.maxTimer.standings + 1000);
+}
+
+export function skipStandings(
+  state: InternalGameState,
+  settings: GameSettings,
+  players: Player[]
+) {
+  if (state.hasAnyoneWon) {
+    const standingsMsg: EndGameResponse = {
+      type: MessageType.END_GAME,
+      state: convertGameState(state),
+      standings: getStanding(state, settings, players),
+      // highlights: [],
+    };
+    players.forEach(({ socket }) => sendOnSocket(socket, standingsMsg));
+    return;
+  }
+  setNextTurn(state, settings, players);
+  const update: UpdateRoomResponse = {
+    type: MessageType.UPDATE_ROOM,
+    update: "Time is up! Moving on to next round.",
+    state: convertGameState(state),
+    moveState: null,
+  };
+  players.forEach(({ socket }, i) =>
+    sendOnSocket(socket, {
+      ...update,
+      cardUpdate: { type: "replace", ...state.hands[i] },
+    })
+  );
 }

@@ -29,13 +29,18 @@ import {
   WithAdminOverride,
   AdminMergeStateMessage,
   DoneVotingMessage,
+  ForceSkipMessage,
+  GameState,
 } from "./model";
 import {
   convertGameState,
   createInternalGameState,
   createSettings,
   setStandings,
-  setTzar,
+  setVoting,
+  skipMove,
+  skipStandings,
+  skipVoting,
   stopTimeout,
 } from "./create";
 import {
@@ -269,7 +274,7 @@ async function handleBegin(ws: WS.WebSocket, m: BeginMessage) {
   log(`Began game in room ${m.roomID}`);
   stopTimeout(state);
   state.timeout = setTimeout(() => {
-    setTzar(state, room.settings, room.players);
+    setVoting(state, room.settings, room.players);
     update.update = "Time is up! Moving on to voting.";
     room.players.forEach(({ socket, name }) =>
       socket.send(
@@ -359,7 +364,7 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
   // If only one player (the tzar) or none (vote) hasn't played, then progress
   if (noMovePlayerCount <= switchCount) {
     stopTimeout(state);
-    setTzar(state, room.settings, room.players);
+    setVoting(state, room.settings, room.players);
   }
 
   const msg: UpdateRoomResponse = {
@@ -444,6 +449,29 @@ function handleDoneVoting(ws: WS.WebSocket, m: DoneVotingMessage) {
   room.players.forEach(({ socket }) => sendOnSocket(socket, update));
 }
 
+function handleForceSkip(ws: WS.WebSocket, m: ForceSkipMessage) {
+  const playerAndRoom = ensurePlayerAndRoom(ws, m);
+  if (!playerAndRoom) return;
+  const { room, player } = playerAndRoom;
+
+  if (room.state?.phase !== m.phase)
+    return sendError(
+      ws,
+      `Cannot be done with ${m.phase} when in ${room.state?.phase} phase!`
+    );
+
+  if (room.creator.UUID !== player.UUID)
+    return sendError(ws, "Invalid user ID");
+
+  const skip: Record<GameState["phase"], typeof skipStandings> = {
+    standings: skipStandings,
+    vote: skipVoting,
+    move: skipMove,
+  };
+
+  skip[m.phase](room.state, room.settings, room.players);
+}
+
 function handleUpdateSettings(ws: WS.WebSocket, m: UpdateSettingsMessage) {
   const res = ensurePlayerAndRoom(ws, m);
   if (!res) return;
@@ -476,6 +504,8 @@ function handleEndStandings(ws: WS.WebSocket, m: EndStandingsMessage) {
   };
 
   room.players.forEach(({ socket }) => sendOnSocket(socket, msg));
+  const state = room.state;
+  if (state) stopTimeout(state);
 
   rooms.delete(m.roomID);
 
@@ -608,6 +638,8 @@ app.ws("/ws", (ws) => {
       handleVote(ws, m);
     } else if (m.type === MessageType.DONE_VOTING) {
       handleDoneVoting(ws, m);
+    } else if (m.type === MessageType.FORCE_SKIP) {
+      handleForceSkip(ws, m);
     } else if (m.type === MessageType.ADMIN_MERGE_STATE) {
       if (!validateOverride(ws, m)) return;
       handleAdminMergeState(ws, m);

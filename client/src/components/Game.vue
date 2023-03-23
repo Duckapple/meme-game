@@ -484,13 +484,13 @@ const blankHighlit =
   </div>
   <div
     v-if="state.visual"
-    class="absolute inset-0 p-8 transition-[opacity transform] flex flex-col items-center justify-center w-full h-full duration-500 overflow-x-hidden overflow-y-scroll"
+    class="absolute left-auto right-auto top-0 p-2 sm:p-0 transition-[opacity transform] grid sm:grid-cols-2 overflow-x-hidden overflow-y-scroll lg:px-20 xl:px-32 2xl:px-40 4xl:p-4"
     :class="{ 'opacity-0 scale-0': state.phase !== 'standings' }"
   >
     <div
       v-if="state.standings"
       v-for="([move, pl, votes], i) in state.standings"
-      class="relative"
+      class="relative pb-2 sm:p-4"
     >
       <Meme
         :bottom="move?.bottom"
@@ -498,21 +498,27 @@ const blankHighlit =
         :visual="state.visual"
         :image-mode="settings.imageMode"
       />
-      <div class="flex justify-center">
+      <div class="flex justify-center pt-2">
         <span class="text-4xl">
-          {{ move?.player }} - {{ votes }} votes<span
+          {{ move?.player }} - {{ votes }}&nbsp;votes<span
             v-if="!state.hasAnyoneWon"
           >
-            - {{ state.points[pl] }} points</span
+            - {{ state.points[pl] }}&nbsp;points</span
           >
         </span>
       </div>
       <span
         v-if="votes === state.standings[0][2]"
-        class="absolute text-5xl select-none sm:text-9xl right-2 sm:right-4 bottom-8 sm:bottom-6 rotate-12"
+        class="absolute text-6xl select-none sm:text-9xl right-2 sm:right-4 bottom-8 sm:bottom-6 rotate-12"
         >🏆</span
       >
     </div>
+    <button
+      class="fixed px-4 py-2 lg:px-8 lg:py-4 lg:text-xl right-4 bottom-4 btn"
+      v-if="creator === username"
+    >
+      Continue to next turn
+    </button>
   </div>
   <span
     v-if="timerNow"

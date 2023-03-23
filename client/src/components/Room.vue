@@ -56,7 +56,10 @@ setTitle(props.roomID);
         <div class="w-md">
           <table>
             <tr
-              v-for="(player, i) in [...players, ...Array(4 - players.length)]"
+              v-for="(player, i) in [
+                ...players,
+                ...Array(players.length >= 4 ? 1 : 4 - players.length),
+              ]"
               :draggable="creator === username && !!player"
               :class="{
                 'outline outline-offset-2 outline-2 outline-lime-500':
