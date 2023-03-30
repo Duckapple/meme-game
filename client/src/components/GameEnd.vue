@@ -50,11 +50,11 @@ const hide = ref(false);
     :class="{ 'opacity-0': hide }"
   >
     <div
-      class="absolute inset-0 z-40 transition-opacity bg-black opacity-60"
+      class="fixed inset-0 z-40 transition-opacity bg-black opacity-60"
       :class="{ 'opacity-0': hide }"
     ></div>
     <div
-      class="absolute inset-0 z-50 flex items-center justify-center transition-opacity"
+      class="fixed inset-0 z-50 flex items-center justify-center transition-opacity"
       :class="{ 'opacity-0': hide }"
     >
       <div
@@ -114,13 +114,13 @@ const hide = ref(false);
       </div>
     </div>
     <canvas
-      class="z-[60] absolute inset-0"
+      class="z-[60] fixed inset-0"
       id="confetti-canvas"
       @pointerdown="() => (hide = true)"
       @pointerup="() => (hide = false)"
     ></canvas>
     <div
-      class="z-[70] absolute inset-x-0 bottom-12 flex justify-center isolate text-2xl transition-opacity"
+      class="z-[70] fixed inset-x-0 bottom-12 flex justify-center isolate text-2xl transition-opacity"
       :class="{
         'opacity-0': !showEndGame || hide,
         'opacity-100': showEndGame && !hide,
