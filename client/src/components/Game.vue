@@ -9,6 +9,7 @@ import type {
   Move,
   MoveState,
   Blank,
+  Hidden,
 } from "../model";
 import { store } from "../state";
 
@@ -151,6 +152,12 @@ const updateIncomingMove = <K extends keyof Move>(key: K, value: Move[K]) => {
   }
 };
 
+const realPlays = computed(() =>
+  props.state.plays
+    .map((x, i) => [x, i] as const)
+    .filter((x): x is [Move | Hidden, number] => !!x[0])
+);
+
 const onArrow = (e: KeyboardEvent) => {
   if (props.state.phase === "vote") {
     if (["a", "d", "ArrowRight", "ArrowLeft", " "].includes(e.key)) {
@@ -159,13 +166,14 @@ const onArrow = (e: KeyboardEvent) => {
       switch (e.key) {
         case "a":
         case "ArrowRight":
-          currentCard.value = (currentCard.value + 1) % props.players.length;
+          currentCard.value = (currentCard.value + 1) % realPlays.value.length;
           return;
         case "d":
         case "ArrowLeft":
           currentCard.value =
-            (currentCard.value > 0 ? currentCard.value : props.players.length) -
-            1;
+            (currentCard.value > 0
+              ? currentCard.value
+              : realPlays.value.length) - 1;
           return;
         case " ":
           const play = props.state.plays[currentCard.value];
@@ -312,7 +320,7 @@ const blankHighlit =
     :class="{ 'opacity-0 scale-0': state.phase !== 'vote' }"
   >
     <div
-      v-for="(play, i) in state.plays"
+      v-for="([play, realIndex], i) in realPlays"
       class="absolute inset-0 flex items-center justify-center w-full h-full transition-transform duration-500"
       :class="{
         '-translate-x-full': currentCard > i,
@@ -327,7 +335,7 @@ const blankHighlit =
         :class="narrowAxis"
         :image-mode="props.settings.imageMode"
         :style="staticHeight && { height: staticHeight + 'px' } /* FML */"
-        @dblclick="play.player !== username && makeLike(i)"
+        @dblclick="play.player !== username && makeLike(realIndex)"
         @touchmove="(e) => touchSwipe(e)"
         @touchend="
           () => {
@@ -346,9 +354,9 @@ const blankHighlit =
         v-if="play && play != 'HIDDEN' && play.player !== username"
         class="absolute z-30 text-red-500 transition-transform scale-0 cursor-pointer select-none left-8 sm:left-16 bottom-1/4 sm:bottom-16 2xl:left-1/4"
         :class="{
-          'scale-[200%] sm:scale-[300%] md:scale-[400%]': likeState[i],
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': likeState[realIndex],
         }"
-        @click="play.player !== username && makeLike(i)"
+        @click="play.player !== username && makeLike(realIndex)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -373,9 +381,9 @@ const blankHighlit =
         v-if="play && play != 'HIDDEN' && play.player !== username"
         class="absolute z-30 text-red-500 transition-transform scale-0 cursor-pointer select-none left-8 sm:left-16 bottom-1/4 sm:bottom-16 2xl:left-1/4"
         :class="{
-          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !likeState[i],
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !likeState[realIndex],
         }"
-        @click="makeLike(i)"
+        @click="makeLike(realIndex)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -397,9 +405,9 @@ const blankHighlit =
         v-if="play && play != 'HIDDEN'"
         class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
         :class="{
-          'scale-[200%] sm:scale-[300%] md:scale-[400%]': saveState[i],
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': saveState[realIndex],
         }"
-        @click="makeSave(i, play)"
+        @click="makeSave(realIndex, play)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -423,9 +431,9 @@ const blankHighlit =
         v-if="play && play != 'HIDDEN'"
         class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
         :class="{
-          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !saveState[i],
+          'scale-[200%] sm:scale-[300%] md:scale-[400%]': !saveState[realIndex],
         }"
-        @click="makeSave(i, play)"
+        @click="makeSave(realIndex, play)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -460,7 +468,7 @@ const blankHighlit =
       }"
       @click="
         () =>
-          (currentCard = (currentCard > 0 ? currentCard : players.length) - 1)
+          (currentCard = (currentCard > 0 ? currentCard : realPlays.length) - 1)
       "
     >
       &lt;
@@ -468,10 +476,10 @@ const blankHighlit =
     <button
       class="absolute top-0 bottom-0 right-0 z-20 w-16 text-5xl transition-opacity md:w-64 2xl:w-1/6 bg-gradient-to-l hover:dark:from-slate-800 hover:from-slate-100 text-shadow"
       :class="{
-        'opacity-0 cursor-default': currentCard >= players.length - 1,
-        'opacity-50 hover:opacity-100': currentCard !== players.length - 1,
+        'opacity-0 cursor-default': currentCard >= realPlays.length - 1,
+        'opacity-50 hover:opacity-100': currentCard !== realPlays.length - 1,
       }"
-      @click="() => (currentCard = (currentCard + 1) % players.length)"
+      @click="() => (currentCard = (currentCard + 1) % realPlays.length)"
     >
       &gt;
     </button>
@@ -489,7 +497,7 @@ const blankHighlit =
   >
     <div
       v-if="state.standings"
-      v-for="([move, pl, votes], i) in state.standings"
+      v-for="([move, pl, votes], i) in state.standings.filter(([x]) => x)"
       class="relative pb-2 sm:p-4"
     >
       <Meme
