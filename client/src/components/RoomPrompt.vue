@@ -3,7 +3,7 @@ import { ref } from "vue";
 import Input from "./Input.vue";
 import { username } from "../state";
 
-defineProps<{
+const props = defineProps<{
   onJoin: (username: string, roomCode: string) => void;
   onCreate: (username: string) => void;
   onSavedMemes: () => void;
@@ -21,6 +21,15 @@ const onDone = () => {
 };
 const usernameError = ref<boolean>(false);
 const roomcodeError = ref<boolean>(false);
+const join = () => {
+  if (username.value && roomCode.value) {
+    onDone();
+    props.onJoin(username.value, roomCode.value);
+  } else {
+    usernameError.value = !username.value;
+    roomcodeError.value = !roomCode.value;
+  }
+};
 </script>
 <template>
   <div class="flex flex-col items-center">
@@ -51,6 +60,7 @@ const roomcodeError = ref<boolean>(false);
         'outline outline-2 outline-red-500': roomcodeError && !roomCode,
       }"
       :upper="true"
+      @enter="join"
     />
     <!-- <div class="flex items-center">
           <label for="obscured" class="mr-6">Hide Room Code</label>
@@ -64,17 +74,7 @@ const roomcodeError = ref<boolean>(false);
         </div> -->
     <button
       class="mb-16 lg:mb-12 4xl:mb-24 btn w-80 md:w-md lg:w-2xl"
-      @click="
-        () => {
-          if (username && roomCode) {
-            onDone();
-            onJoin(username, roomCode);
-          } else {
-            usernameError = !username;
-            roomcodeError = !roomCode;
-          }
-        }
-      "
+      @click="join"
     >
       <span
         class="block px-8 py-4 text-xl cursor-pointer md:text-4xl md:px-12 md:py-6"

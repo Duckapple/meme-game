@@ -6,9 +6,14 @@ const props = defineProps<{
   password?: boolean;
   text: string;
   onInput: (input: string) => void;
+  onEnter?: () => void;
   upper?: boolean;
 }>();
 const maybeUpper = (s: string) => (props.upper ? s.toUpperCase() : s);
+const onEnter = (e: KeyboardEvent) => {
+  if (e.key !== "Enter" || !props.onEnter) return;
+  props.onEnter();
+};
 </script>
 <template>
   <div class="group w-80 md:w-md lg:w-2xl">
@@ -20,6 +25,7 @@ const maybeUpper = (s: string) => (props.upper ? s.toUpperCase() : s);
       :maxlength="maxlength"
       :value="text"
       @input="(e) => onInput(maybeUpper((e.target as Record<'value', string> | null)?.['value'] ?? ''))"
+      @keypress="onEnter"
     />
     <div
       class="transition-[width,translate] w-0 h-1 -mt-1 bg-gray-800 group-hover:w-full group-focus-within:w-full dark:bg-gray-100"
