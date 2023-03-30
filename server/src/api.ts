@@ -132,15 +132,55 @@ export async function oldRefresh(force = false) {
   }
 }
 
-export function submit(
+const createTextDTO = z.object({
+  text: z.string().min(1),
+  position: z.literal(ApiPosition.TOP).or(z.literal(ApiPosition.BOTTOM)),
+});
+
+export async function submit(
+  endpoint: "toptexts" | "bottomtexts",
+  data: Omit<z.infer<typeof createTextDTO>, "position">
+) {
+  const position =
+    endpoint === "toptexts" ? ApiPosition.TOP : ApiPosition.BOTTOM;
+  const body = JSON.stringify({
+    ...data,
+    position,
+  } satisfies z.infer<typeof createTextDTO>);
+  try {
+    const res = await (
+      await fetch(`${api}/Texts/`, {
+        body,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
+    ).json();
+    log(
+      `Submitted '${JSON.stringify(
+        body
+      )}' to '${endpoint}' with response '${JSON.stringify(res)}'`
+    );
+    return (endpoint === "toptexts" ? apiMemeTopText : apiMemeBottomText).parse(
+      res
+    );
+  } catch (err) {
+    log("Falling back to old submit");
+    return oldSubmit(endpoint, { memetext: data.text });
+  }
+}
+
+export function oldSubmit(
   endpoint: "visuals",
   data: Omit<z.infer<typeof oldVisual>, "id">
 ): Promise<void>;
-export function submit(
+export function oldSubmit(
   endpoint: "toptexts" | "bottomtexts",
   data: Omit<z.infer<typeof oldApiMemeText>, "id">
 ): Promise<void>;
-export async function submit(endpoint: string, body: any) {
+export async function oldSubmit(endpoint: string, body: any) {
   log(`Submitted '${JSON.stringify(body)}' to '${endpoint}'`);
   try {
     log(
@@ -155,5 +195,7 @@ export async function submit(endpoint: string, body: any) {
         })
       ).json()
     );
-  } catch (err) {}
+  } catch (err) {
+    log("Could not submit, for some reason");
+  }
 }

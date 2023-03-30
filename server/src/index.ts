@@ -354,9 +354,17 @@ function handleMakeMove(ws: WS.WebSocket, m: MakeMoveMessage) {
       .filter((side) => move[side]?.id === -1 && move[side]?.text)
       .map((side) =>
         move[side]?.text
-          ? submit(`${side}texts`, { memetext: move[side]?.text ?? "" })
+          ? submit(`${side}texts`, { text: move[side]?.text ?? "" })
           : Promise.resolve()
       )
+  ).then((res) =>
+    res.forEach((r) => {
+      if (r && r.text) {
+        const card = { id: r.id, text: r.text };
+        state.piles[r.position === 0 ? "top" : "bottom"].push(card);
+        (r.position === 0 ? toptexts : bottomtexts).push(card);
+      }
+    })
   );
 
   const noMovePlayerCount = state.plays.filter((v) => v == null).length;
