@@ -54,7 +54,7 @@ const addNotif = (message: string, isError?: typeof ERROR) => {
   notifs.value.push({ message, error: !!isError });
   setTimeout(() => {
     notifs.value.shift();
-  }, 10000);
+  }, 4000);
 };
 
 function handleCardUpdate(cardUpdate?: CardUpdate) {
@@ -291,8 +291,8 @@ const onEndStandings = () => {
   <div class="fixed bottom-4 right-4">
     <div
       v-for="{ message, error } in notifs"
-      class="p-4 mb-2 bg-white border-2 border-red-500 w-sm md:w-md dark:bg-gray-900"
-      :class="{ 'border-red-500': error, 'border-gray-500': !error }"
+      class="w-64 p-4 mb-2 bg-white md:border-2 md:border-red-500 sm:w-sm md:w-md dark:bg-gray-900"
+      :class="{ 'md:border-red-500': error, 'md:border-gray-500': !error }"
     >
       {{ message }}
     </div>

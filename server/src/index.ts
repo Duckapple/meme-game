@@ -560,6 +560,7 @@ function handleAssignUuid(ws: WS.WebSocket, m: AssignUUIDMessage) {
     visual_cdn,
   };
   sendOnSocket(ws, greeting);
+  return userID;
 }
 
 function handleLookup(ws: WS.WebSocket, m: LookupMessage) {
@@ -609,11 +610,15 @@ async function handleAdminMergeState(
 }
 
 app.ws("/ws", (ws) => {
+  let uuid: string | undefined;
   const timer = setInterval(() => {
     ws.ping(undefined, undefined, (error) => {
-      error && clearInterval(timer);
+      if (error) {
+        log(`uuid'${uuid}': Ping failed: ${error}`);
+        clearInterval(timer);
+      }
     });
-  }, 15000);
+  }, 3000);
 
   ws.on("message", (msg) => {
     let m: Message;
@@ -625,7 +630,7 @@ app.ws("/ws", (ws) => {
       return;
     }
     if (m.type === MessageType.ASSIGN_UUID) {
-      handleAssignUuid(ws, m);
+      uuid = handleAssignUuid(ws, m);
     } else if (m.type === MessageType.CREATE_ROOM) {
       handleCreateRoom(ws, m);
     } else if (m.type === MessageType.JOIN_ROOM) {
