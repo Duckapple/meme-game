@@ -2,11 +2,11 @@ export * from "./communication";
 
 export type Hidden = "HIDDEN";
 
-export type Card = { id: number };
+export type Card = { id: number | string };
 export type Blank = { id: -1; text?: string };
 
 export type FullCard = Card & { text: string };
-export type Visual = { id: number; filename: string };
+export type Visual = { id: number | string; filename: string };
 
 export type AnonymousMove = {
   top?: FullCard | Blank;

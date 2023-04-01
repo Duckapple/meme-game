@@ -37,7 +37,7 @@ enum ApiPosition {
 }
 
 const apiMemeText = z.object({
-  id: z.number(),
+  id: z.number().or(z.string()),
   text: z.string().nullable(),
 });
 const apiMemeTopText = apiMemeText.extend({
@@ -47,7 +47,7 @@ const apiMemeBottomText = apiMemeText.extend({
   position: z.literal(ApiPosition.BOTTOM),
 });
 const visual = z.object({
-  id: z.number(),
+  id: z.number().or(z.string()),
   filename: z.string().nullable(),
 });
 
