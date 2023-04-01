@@ -32,7 +32,7 @@ export interface GameSettings {
   gameStyle: GameStyle;
   winCondition: {
     n: number;
-    type: "rounds" | "points";
+    type: "rounds" | "points" | "votes";
   };
   pointCount: "votes" | "best";
   maxTimer: Record<GameState["phase"], number>;

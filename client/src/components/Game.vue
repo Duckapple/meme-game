@@ -37,6 +37,7 @@ const props = defineProps<{
   onMakeMove: MakeMoveFunction;
   onMakeLike: (index: number, state: boolean) => void;
   onDoneVoting: () => void;
+  onNextTurn: () => void;
   moveState?: MoveState | null;
 }>();
 
@@ -524,6 +525,7 @@ const blankHighlit =
     <button
       class="fixed px-4 py-2 lg:px-8 lg:py-4 lg:text-xl right-4 bottom-4 btn"
       v-if="creator === username"
+      @click="onNextTurn"
     >
       Continue to next turn
     </button>

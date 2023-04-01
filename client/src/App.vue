@@ -21,6 +21,7 @@ import {
   EndStandings,
   DoneVotingMessage,
   Blank,
+  ForceSkipMessage,
 } from "./model";
 import RoomPrompt from "./components/RoomPrompt.vue";
 import Room from "./components/Room.vue";
@@ -247,6 +248,17 @@ const onDoneVoting = () => {
   ws.value.send(JSON.stringify(msg));
 };
 
+const onNextTurn = () => {
+  if (!roomDetails.value || !UUID.value) return;
+  const msg: ForceSkipMessage = {
+    type: MessageType.FORCE_SKIP,
+    roomID: roomDetails.value.roomID,
+    userID: UUID.value,
+    phase: "standings",
+  };
+  ws.value.send(JSON.stringify(msg));
+};
+
 const onEndStandings = () => {
   if (!roomDetails.value || !UUID.value) return;
   const msg: EndStandingsMessage = {
@@ -285,6 +297,7 @@ const onEndStandings = () => {
       onMakeMove,
       onMakeLike,
       onDoneVoting,
+      onNextTurn,
       moveState,
     }"
   />

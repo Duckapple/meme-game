@@ -5,6 +5,7 @@ import { GameSettings } from "../model";
 const legibleOptions: Record<GameSettings["winCondition"]["type"], string> = {
   points: "First to",
   rounds: "Best of",
+  votes: "First to",
 };
 
 const parse = (e: Event): number | null => {
@@ -129,8 +130,9 @@ const inputClass = "bg-transparent w-10 text-end";
       v-model="settings.winCondition.type"
       class="px-2 py-1 mr-2 bg-transparent border-2 dark:border-white"
     >
-      <option value="points">{{ legibleOptions["points"] }}</option>
-      <option value="rounds">{{ legibleOptions["rounds"] }}</option>
+      <option value="points">(points) {{ legibleOptions["points"] }}</option>
+      <option value="rounds">(rounds) {{ legibleOptions["rounds"] }}</option>
+      <option value="votes">(votes) {{ legibleOptions["votes"] }}</option>
     </select>
     <span v-if="!isCreator">{{
       legibleOptions[settings.winCondition.type]

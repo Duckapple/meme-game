@@ -231,6 +231,7 @@ function hasAnyoneWon(
 ): boolean {
   switch (settings.winCondition.type) {
     case "points":
+    case "votes":
       return state.points.some((p) => p >= settings.winCondition.n);
     case "rounds":
       return state.rounds >= settings.winCondition.n;
@@ -253,6 +254,7 @@ function getStanding(
   switch (settings.winCondition.type) {
     case "points":
     case "rounds":
+    case "votes":
       const grouped = state.points.map((p, i) => [p, i]);
       grouped.sort(([p1], [p2]) => p2 - p1);
       let currentPoints = Infinity;
@@ -295,9 +297,13 @@ export function setStandings(
     .sort(([, , a], [, , b]) => b - a);
   state.standings = results;
   const winnerVotes = results[0][2];
-  results
-    .filter(([, , x]) => x === winnerVotes)
-    .forEach(([, i]) => (state.points[i] += 1));
+  if (settings.winCondition.type === "votes") {
+    results.forEach(([, i, votes]) => (state.points[i] += votes));
+  } else {
+    results
+      .filter(([, , x]) => x === winnerVotes)
+      .forEach(([, i]) => (state.points[i] += 1));
+  }
   state.plays = state.plays.map(() => null);
   state.shuffle = state.plays.map((_, i) => i);
   state.hasAnyoneWon = hasAnyoneWon(state, settings);
