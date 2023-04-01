@@ -148,21 +148,21 @@ export async function submit(
     position,
   } satisfies z.infer<typeof createTextDTO>);
   try {
-    const res = await (
-      await fetch(`${api}/Texts/`, {
-        body,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      })
-    ).json();
+    const f = await fetch(`${api}/Texts/`, {
+      body,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    const t = await f.text();
     log(
       `Submitted '${JSON.stringify(
         body
-      )}' to '${endpoint}' with response '${JSON.stringify(res)}'`
+      )}' to '${endpoint}' with response '${t}'`
     );
+    const res = JSON.parse(t);
     return (endpoint === "toptexts" ? apiMemeTopText : apiMemeBottomText).parse(
       res
     );
