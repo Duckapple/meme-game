@@ -62,7 +62,8 @@ const makeSave = (i: number, play: Move) => {
 };
 
 const like = ref<HTMLDivElement>();
-const makeLike = (i: number) => {
+const makeLike = (i: number, play: Move) => {
+  makeSave(i, play);
   const likeSpan = document.createElement("span");
   likeSpan.innerText = likeState.value[i] ? "💔" : "❤️";
   likeSpan.setAttribute("style", "user-select: none");
@@ -179,7 +180,7 @@ const onArrow = (e: KeyboardEvent) => {
         case " ":
           const play = props.state.plays[currentCard.value];
           if (!play || play === "HIDDEN") return;
-          play.player !== props.username && makeLike(currentCard.value);
+          play.player !== props.username && makeLike(currentCard.value, play);
           return;
       }
       return;
@@ -336,7 +337,7 @@ const blankHighlit =
         :class="narrowAxis"
         :image-mode="props.settings.imageMode"
         :style="staticHeight && { height: staticHeight + 'px' } /* FML */"
-        @dblclick="play.player !== username && makeLike(realIndex)"
+        @dblclick="play.player !== username && makeLike(realIndex, play)"
         @touchmove="(e) => touchSwipe(e)"
         @touchend="
           () => {
@@ -357,7 +358,7 @@ const blankHighlit =
         :class="{
           'scale-[200%] sm:scale-[300%] md:scale-[400%]': likeState[realIndex],
         }"
-        @click="play.player !== username && makeLike(realIndex)"
+        @click="play.player !== username && makeLike(realIndex, play)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -384,7 +385,7 @@ const blankHighlit =
         :class="{
           'scale-[200%] sm:scale-[300%] md:scale-[400%]': !likeState[realIndex],
         }"
-        @click="makeLike(realIndex)"
+        @click="makeLike(realIndex, play)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -403,7 +404,7 @@ const blankHighlit =
         </svg>
       </button>
       <button
-        v-if="play && play != 'HIDDEN'"
+        v-if="play && play != 'HIDDEN' && play.player === username"
         class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
         :class="{
           'scale-[200%] sm:scale-[300%] md:scale-[400%]': saveState[realIndex],
@@ -429,7 +430,7 @@ const blankHighlit =
         </svg>
       </button>
       <button
-        v-if="play && play != 'HIDDEN'"
+        v-if="play && play != 'HIDDEN' && play.player === username"
         class="absolute z-30 text-yellow-600 transition-transform scale-0 cursor-pointer select-none right-8 top-1/4 sm:right-16 sm:top-16 2xl:right-1/4"
         :class="{
           'scale-[200%] sm:scale-[300%] md:scale-[400%]': !saveState[realIndex],
