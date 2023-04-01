@@ -60,8 +60,8 @@ export async function refresh() {
       toptextsText = await (
         await fetch(`${api}/Texts/${ApiPosition.TOP}`)
       ).json();
-    } catch {
-      log("New API doesn't work, falling back to old API standard");
+    } catch (err) {
+      log("New API doesn't work, falling back to old API standard:", err);
       return oldRefresh(FORCE);
     }
 
@@ -167,7 +167,7 @@ export async function submit(
       res
     );
   } catch (err) {
-    log("Falling back to old submit");
+    log("Falling back to old submit:", err);
     return oldSubmit(endpoint, { memetext: data.text });
   }
 }
